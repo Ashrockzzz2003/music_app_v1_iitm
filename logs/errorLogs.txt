@@ -1,0 +1,14 @@
+[ERROR] 2023-12-14 09:23:48.463743: object of type 'int' has no len()
+[ERROR] 2023-12-14 09:23:57.001992: object of type 'int' has no len()
+[ERROR] 2023-12-14 09:32:43.853841: 'secretToken'
+[ERROR] 2023-12-14 10:15:13.433349: NOT NULL constraint failed: userData.accountStatus
+[ERROR] 2023-12-14 10:17:14.016997: NOT NULL constraint failed: userData.accountStatus
+[ERROR] 2023-12-14 10:18:06.129511: 6 values for 7 columns
+[ERROR] 2023-12-14 20:16:39.808617: UNIQUE constraint failed: userData.userEmail
+[ERROR] 2023-12-14 20:16:39.922766: UNIQUE constraint failed: userData.userEmail
+[ERROR] 2023-12-14 20:17:21.556807: UNIQUE constraint failed: userData.userEmail
+[ERROR] 2023-12-14 20:17:22.732718: UNIQUE constraint failed: userData.userEmail
+[ERROR] 2023-12-14 20:18:18.491348: UNIQUE constraint failed: userData.userEmail
+[ERROR] 2023-12-14 20:19:06.476631: UNIQUE constraint failed: userData.userEmail
+[ERROR] 2023-12-14 20:19:06.590598: UNIQUE constraint failed: userData.userEmail
+[ERROR] 2023-12-14 20:19:14.833359: near "*": syntax error
