@@ -49,21 +49,34 @@
 
 <body>
     <script type="text/javascript">
-        const songList = JSON.parse(`{{songList | tojson | safe}}`);
         let audioElements = {};
         let lastPausedId = null;
 
-        /*
-        playIcon.classList.toggle('hidden');
-                        pauseIcon.classList.toggle('hidden');
-                        buttonText.innerHTML = 'Pause';
-                        songCard.style.border = '1px solid #e2f8f6d7';*/
+        function lyricsModalPopup(songName, songLyrics) {
+            const mainScreen = document.querySelector('.mainScreen');
+            mainScreen.style.filter = 'blur(10px)';
+            const modal = document.querySelector('.modal');
+            const modalTitle = document.querySelector('#modalTitle');
+            const lyricsBody = document.querySelector('#lyricsBody');
+
+            songLyrics = songLyrics.replace(/(?:\r\n|\r|\n)/g, '<br>');
+
+            modalTitle.innerHTML = songName;
+            lyricsBody.innerHTML = songLyrics;
+
+            modal.style.display = 'block';
+        }
+
+        function closeModal() {
+            const modal = document.querySelector('.modal');
+            modal.style.display = 'none';
+            const mainScreen = document.querySelector('.mainScreen');
+            mainScreen.style.filter = 'blur(0px)';
+        }
 
         function handlePlayPause(songId) {
             const playButton = document.querySelector(`#playButton_${songId}`);
             const songCard = document.querySelector(`#songCard_${songId}`);
-
-            console.log(audioElements[songId]);
 
             if (audioElements[songId] != undefined) {
                 if (audioElements[songId].paused) {
@@ -152,89 +165,115 @@
                 if (flag) {
                     if (lastPausedId != null) {
                         handlePlay(lastPausedId);
-                    } else {
-                        handlePlayPause(songList[0][0]);
                     }
                 }
             }
         });
     </script>
-    <!--NavBar-->
-    <header>
-        <nav>
-            <ul class="nav-bar">
-                <a class="logo" href="/creator/dashboard">
-                    <i class="material-icons">music_note</i>
-                    <span class="logo-text">Music App</span>
-                </a>
-                <span class="menu">
-                    <li><a href="/">Profile</a></li>
-                    <li><a href="/">My Work</a></li>
-                    <li><a href="/auth/logout">Logout</a></li>
-                </span>
-                <span class="logo menu-trigger hidden">
-                    <i class="material-icons">menu</i>
-                </span>
-            </ul>
-        </nav>
-    </header>
 
-    <div class="content">
-        <h1 style="margin-top: 0; margin-bottom: 2px">Welcome, {{session['userName']}}</h1>
-        <div class="chip">
-            Creator
-        </div>
-
-        <div class="row">
-            <div class="bigButton">
-                <a href="/song/new">
-                    <i class="material-icons">add_circle</i>
-                    <span class="button-text">New Song</span>
-                </a>
-            </div>
-            <div class="bigButton">
-                <a href="/album/new">
-                    <i class="material-icons">add_circle</i>
-                    <span class="button-text">New Album</span>
-                </a>
-            </div>
-        </div>
-
-        <h2>My Songs</h2>
-
-        <!-- Song Cards -->
-        {% if songList | length == 0 %}
-        <h4>No Songs</h4>
-        {% else %}
-        <div class="songList">
-            {% for song in songList %}
-            <div class="songCard" id="songCard_{{song[0]}}">
-                <div class="songCard__image">
-                    <img src="/static/music/poster/{{song[0]}}.jpeg" alt="Song Image">
-                </div>
-                <div class="songCard__details">
-                    <h3>{{song[1]}}</h3>
-                    <!-- <p class="genreChip">{{song[2]}}</p> -->
-                </div>
-                <hr />
-                <div class="songCard__buttons">
-                    <a href="/song/{{song[0]}}/edit">
-                        <i class="material-icons">edit</i>
+    <div class="mainScreen" style="height: 96vh;">
+        <header>
+            <nav>
+                <ul class="nav-bar">
+                    <a class="logo" href="/creator/dashboard">
+                        <i class="material-icons">music_note</i>
+                        <span class="logo-text">Music App</span>
                     </a>
-                    <div class="iconRow playButton" id="playButton_{{song[0]}}" onclick="handlePlayPause(`{{song[0]}}`)">
-                        <i class="material-icons play">play_arrow</i>
-                        <i class="material-icons pause hidden">pause</i>
-                        <p class="button-text">Play</p>
+                    <span class="menu">
+                        <li><a href="/">Profile</a></li>
+                        <li><a href="/">My Work</a></li>
+                        <li><a href="/auth/logout">Logout</a></li>
+                    </span>
+                    <span class="logo menu-trigger hidden">
+                        <i class="material-icons">menu</i>
+                    </span>
+                </ul>
+            </nav>
+        </header>
+    
+        <div class="content">
+            <h1 style="margin-top: 0; margin-bottom: 2px">Welcome, {{session['userName']}}</h1>
+            <div class="chip">
+                Creator
+            </div>
+    
+            <div class="row">
+                <div class="bigButton">
+                    <a href="/song/new">
+                        <i class="material-icons">add_circle</i>
+                        <span class="button-text">New Song</span>
+                    </a>
+                </div>
+                <div class="bigButton">
+                    <a href="/album/new">
+                        <i class="material-icons">add_circle</i>
+                        <span class="button-text">New Album</span>
+                    </a>
+                </div>
+            </div>
+    
+            <h2>My Songs</h2>
+    
+            <!-- Song Cards -->
+            {% if songList | length == 0 %}
+            <div class="empty">
+                <h3 style="text-align: center;">No Songs Found</h3>
+                <p style="text-align: center;">Click on the button above to add a new song</p>
+            </div>
+            {% else %}
+            <div class="songList">
+                {% for song in songList %}
+                <div style="display: block;">
+                    <div class="songCard" id="songCard_{{song[0]}}">
+                        <div class="songCard__image">
+                            <img src="/static/music/poster/{{song[0]}}.jpeg" alt="Song Image">
+                        </div>
+                        <div class="songCard__details">
+                            <h3>{{song[1]}}</h3>
+                            <!-- <p class="genreChip">{{song[2]}}</p> -->
+                        </div>
+                        <hr />
+                        <div class="songCard__buttons">
+                            <a href="/song/{{song[0]}}/edit">
+                                <i class="material-icons">edit</i>
+                            </a>
+                            <div class="iconRow playButton" id="playButton_{{song[0]}}"
+                                onclick="handlePlayPause(`{{song[0]}}`)">
+                                <i class="material-icons play">play_arrow</i>
+                                <i class="material-icons pause hidden">pause</i>
+                                <p class="button-text">Play</p>
+                            </div>
+                            <a>
+                                <i class="material-icons"
+                                    onclick="lyricsModalPopup(`{{song[1]}}`, `{{song[3] | safe}}`)">lyrics</i>
+                            </a>
+                            <a href="/song/{{song[0]}}/delete">
+                                <i class="material-icons">delete</i>
+                            </a>
+                        </div>
                     </div>
-                    <a href="/song/{{song[0]}}/delete">
-                        <i class="material-icons">delete</i>
-                    </a>
+                    <!-- <div class="audioPlayer">
+                <audio controls>
+                    <source src="/static/music/song/{{song[0]}}.mp3" type="audio/mpeg">
+                </audio>
+            </div> -->
                 </div>
+                {% endfor %}
             </div>
-            {% endfor %}
+            {% endif %}
         </div>
-        {% endif %}
     </div>
+
+    <div class="modal">
+        <div class="modal-content">
+            <div class="form-container">
+                <span class="close" onclick="closeModal()">&times;</span>
+                <h2 id="modalTitle"></h2>
+            </div>
+            <p id="lyricsBody"></p>
+        </div>
+    </div>
+
 
     <!-- JS -->
     <script type="text/javascript" src="../../static/js/base.js"></script>

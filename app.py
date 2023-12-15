@@ -8,6 +8,8 @@ import sqlite3
 
 from datetime import datetime
 
+# from PIL import Image
+
 app = Flask(__name__)
 app.secret_key = 'OkvzD0IvqdPOa47J0q3z5VaGy2cCDoP6V5GEfO0kGeq3vFfk1cb7vs8QMJiwF0nGIcXWCKoqD6wE6h1mUQZdQu7hR3FLjDwyRCCOY6bfuLBpr+WgQIDAQABAoGAENt4zTvrXc7Sig4N3tUsJ'
 
@@ -370,7 +372,7 @@ def creatorDashboardScreen():
         db_cursor = db_connection.cursor()
 
         # Get all songs
-        db_cursor.execute(f"SELECT s.songId, s.songName, g.genreName FROM songData AS s JOIN genreData AS g ON g.genreId = s.songGenreId JOIN languageData AS l ON l.languageId = s.songLanguageId WHERE s.createdBy = ?", (userId,))
+        db_cursor.execute(f"SELECT s.songId, s.songName, g.genreName, s.songLyrics FROM songData AS s JOIN genreData AS g ON g.genreId = s.songGenreId JOIN languageData AS l ON l.languageId = s.songLanguageId WHERE s.createdBy = ?", (userId,))
         songList = db_cursor.fetchall()
 
         db_connection.close()

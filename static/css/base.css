@@ -584,22 +584,17 @@ input[type="file"]::-webkit-file-upload-button:hover {
 
 
 /* Popup form */
-/* .modal {
+.modal {
   display: none;
   position: fixed;
   z-index: 1;
-  padding-top: 100px;
-  left: 0;
-  top: 0;
   width: 100%;
   height: 100%;
   overflow: auto;
-  background-color: #000;
 }
 
 .modal-content {
-  background-color: rgba(41, 42, 45, 0.4);
-  backdrop-filter: blur(10px);
+  background-color: black;
   margin: auto;
   border: 1px solid rgba(41, 42, 45, 0.4);
   border-radius: 16px;
@@ -610,7 +605,6 @@ input[type="file"]::-webkit-file-upload-button:hover {
 
 .close {
   color: #aaaaaa;
-  float: right;
   font-size: 28px;
   font-weight: bold;
   margin-right: 16px;
@@ -619,7 +613,7 @@ input[type="file"]::-webkit-file-upload-button:hover {
 
 .close:hover,
 .close:focus {
-  color: #000;
+  color: #ffffff;
   text-decoration: none;
   cursor: pointer;
 }
@@ -628,7 +622,7 @@ input[type="file"]::-webkit-file-upload-button:hover {
   .modal-content {
     width: 100%;
   }
-} */
+}
 
 /* Popup form end */
 
@@ -733,6 +727,7 @@ input[type="file"]::-webkit-file-upload-button:hover {
   align-items: center;
   border: 1px solid rgba(41, 42, 45);
   border-radius: 16px;
+  margin-right: 4px;
   cursor: pointer;
   padding: 4px;
   color: black;
@@ -747,4 +742,33 @@ input[type="file"]::-webkit-file-upload-button:hover {
 
 .playButton .hidden {
   display: none;
+}
+
+.songCard .songCard__progress {
+  width: 100%;
+  height: 4px;
+  background-color: rgba(41, 42, 45, 0.4);
+  border-radius: 8px;
+  margin-top: 8px;
+  margin-bottom: 8px;
+}
+
+.songCard .songCard__progress .progressBar {
+  width: 0%;
+  height: 100%;
+  background-color: rgba(41, 42, 45, 0.8);
+  border-radius: 8px;
+}
+
+.empty {
+  padding: 16px;
+  font-size: 1rem;
+  display: block;
+  color: white;
+  border: 1px solid rgba(41, 42, 45, 0.4);
+  border-radius: 16px;
+  background-color: rgba(41, 42, 45, 0.4);
+  width: fit-content;
+  margin: auto;
+  text-align: center;
 }
