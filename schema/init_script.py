@@ -2,6 +2,7 @@
 
 import sqlite3
 from datetime import datetime
+import os
 
 init_query = """
 /* SQLITE 3 Music Streaming App */
@@ -17,6 +18,8 @@ DROP TABLE IF EXISTS "songData";
 DROP TABLE IF EXISTS "albumLikes";
 DROP TABLE IF EXISTS "albumData";
 DROP TABLE IF EXISTS "genreData";
+DROP TABLE IF EXISTS "languageData";
+DROP TABLE IF EXISTS "userFollows";
 DROP TABLE IF EXISTS "userData";
 DROP TABLE IF EXISTS "userRole";
 
@@ -41,6 +44,20 @@ CREATE TABLE IF NOT EXISTS "userData" (
     CHECK ("userGender" IN ("M", "F", "O"))
 );
 
+CREATE TABLE IF NOT EXISTS "userFollows" (
+    "userId" INTEGER NOT NULL,
+    "followerId" INTEGER NOT NULL,
+    "createdAt" TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY ("userId", "followerId"),
+    FOREIGN KEY ("userId") REFERENCES "userData" ("userId"),
+    FOREIGN KEY ("followerId") REFERENCES "userData" ("userId")
+);
+
+CREATE TABLE IF NOT EXISTS "languageData" (
+    "languageId" INTEGER PRIMARY KEY AUTOINCREMENT,
+    "languageName" TEXT NOT NULL UNIQUE
+);
+
 CREATE TABLE IF NOT EXISTS "genreData" (
     "genreId" INTEGER PRIMARY KEY AUTOINCREMENT,
     "genreName" TEXT NOT NULL UNIQUE,
@@ -61,6 +78,7 @@ CREATE TABLE IF NOT EXISTS "albumData" (
     "albumDescription" TEXT NULL,
     "albumRating" TEXT NOT NULL,
     "releaseDate" TEXT NOT NULL,
+    "albumLikesCount" INTEGER NOT NULL DEFAULT 0,
     "isActive" TEXT NOT NULL,
     "createdBy" INTEGER NOT NULL,
     "createdAt" TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -87,12 +105,14 @@ CREATE TABLE IF NOT EXISTS "songData" (
     "songId" INTEGER PRIMARY KEY AUTOINCREMENT,
     "songName" TEXT NOT NULL,
     "songDescription" TEXT NULL,
-    "songRating" TEXT NOT NULL,
+    "songRating" TEXT NOT NULL DEFAULT "0",
     "songLyrics" TEXT NULL,
-    "songDuration" TEXT NOT NULL,
+    "songDuration" TEXT NULL,
     "songReleaseDate" TEXT NOT NULL,
     "songGenreId" INTEGER NOT NULL,
     "songAlbumId" INTEGER NULL,
+    "songLanguageId" INTEGER NOT NULL,
+    "likesCount" INTEGER NOT NULL DEFAULT 0,
     "isActive" TEXT NOT NULL,
     "createdBy" INTEGER NOT NULL,
     "createdAt" TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -102,6 +122,7 @@ CREATE TABLE IF NOT EXISTS "songData" (
     FOREIGN KEY ("songAlbumId") REFERENCES "albumData" ("albumId"),
     FOREIGN KEY ("createdBy") REFERENCES "userData" ("userId"),
     FOREIGN KEY ("lastUpdatedBy") REFERENCES "userData" ("userId"),
+    FOREIGN KEY ("songLanguageId") REFERENCES "languageData" ("languageId"),
     CHECK ("songRating" IN ("0", "1", "2", "3", "4", "5")),
     CHECK ("isActive" IN ("0", "1"))
 );
@@ -174,6 +195,25 @@ INSERT INTO "userRole" ("roleName") VALUES ("CREATOR");
 INSERT INTO "userRole" ("roleName") VALUES ("USER");
 
 INSERT INTO "userData" ("userName", "userEmail", "userPassword", "userRoleId", "userDob", "userGender", "accountStatus") VALUES ("Ramamurthy", "ram@gmail.com", "ram12345", "0", "1999-01-01", "M", "1");
+INSERT INTO "userData" ("userName", "userEmail", "userPassword", "userRoleId", "userDob", "userGender", "accountStatus") VALUES ("Ashwin Narayanan S", "ashrockzzz2003@gmail.com", "As@131003", "1", "2003-10-13", "M", "1");
+
+
+INSERT INTO "languageData" ("languageName") VALUES ("English");
+INSERT INTO "languageData" ("languageName") VALUES ("Hindi");
+INSERT INTO "languageData" ("languageName") VALUES ("Tamil");
+INSERT INTO "languageData" ("languageName") VALUES ("Telugu");
+INSERT INTO "languageData" ("languageName") VALUES ("Malayalam");
+INSERT INTO "languageData" ("languageName") VALUES ("Kannada");
+INSERT INTO "languageData" ("languageName") VALUES ("Spanish");
+
+
+INSERT INTO "genreData" ("genreName", "genreDescription", "isActive", "createdBy") VALUES ("Classical", "Classical music is art music produced or rooted in the traditions of Western culture, including both liturgical (religious) and secular music.", "1", 1);
+INSERT INTO "genreData" ("genreName", "genreDescription", "isActive", "createdBy") VALUES ("Country", "Country music, also known as country and western (or simply country), and hillbilly music, is a genre of popular music that takes its roots from genres such as blues and old-time music, and various types of American folk music including Appalachian, Cajun, and the cowboy Western music styles of Red Dirt, New Mexico, Texas country, and Tejano.", "1", 1);
+INSERT INTO "genreData" ("genreName", "genreDescription", "isActive", "createdBy") VALUES ("Folk", "Folk music includes traditional folk music and the genre that evolved from it during the 20th-century folk revival.", "1", 1);
+INSERT INTO "genreData" ("genreName", "genreDescription", "isActive", "createdBy") VALUES ("Melody", "Melody is a linear sequence of notes the listener hears as a single entity. The term comes from the Greek word melōidía and is used by Plato and Aristotle to describe music of any kind, including music of the spheres and music played by the Muses.", "1", 1);
+INSERT INTO "genreData" ("genreName", "genreDescription", "isActive", "createdBy") VALUES ("Rock", "Rock is a genre of popular music that originated as 'rock and roll' in the United States in the 1950s, and developed into a range of different styles in the 1960s and later, particularly in the United States and the United Kingdom.", "1", 1);
+INSERT INTO "genreData" ("genreName", "genreDescription", "isActive", "createdBy") VALUES ("Pop", "Pop is a genre of popular music that originated in its modern form during the mid-1950s in the United States and the United Kingdom.", "1", 1);
+INSERT INTO "genreData" ("genreName", "genreDescription", "isActive", "createdBy") VALUES ("Jazz", "Jazz is a music genre that originated in the African-American communities of New Orleans, Louisiana, United States, in the late 19th and early 20th centuries, with its roots in blues and ragtime.", "1", 1);
 """
 
 def reinitializeDatabase():
@@ -192,3 +232,22 @@ def reinitializeDatabase():
         print("[ERROR]: Error in reinitializing database.")
     finally:
         return
+    
+def initEnvironment():
+    # Clear files
+    f = open("logs/errorLogs.txt", "w")
+    f.write("")
+    f.close()
+
+    print("[MESSAGE]: Error logs cleared")
+
+    # Clear all files under static/music
+    for file in os.listdir('static/music/song'):
+        os.remove(f"static/music/song/{file}")
+
+    for file in os.listdir('static/music/poster'):
+        os.remove(f"static/music/poster/{file}")
+
+    print("[MESSAGE]: Music files cleared")
+
+    return

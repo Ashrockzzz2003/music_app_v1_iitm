@@ -7,14 +7,158 @@
     <title>Music App | Creator Dashboard</title>
 
     <!-- Styles -->
-    <link rel="stylesheet" href="../static/css/base.css">
-    <link rel="stylesheet" href="../static/css/dashboard.css">
+    <link rel="stylesheet" href="../../static/css/base.css">
+    <link rel="stylesheet" href="../../static/css/dashboard.css">
+    <link rel="stylesheet" href="../../static/css/creator_dashboard.css">
 
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.0.0/crypto-js.min.js"></script>
 </head>
 
+<!-- <script>
+    function handlePlayPause(songId) {
+        const playButton = document.querySelector(`#playButton_${songId}`);
+        const songCard = document.querySelector(`#songCard_${songId}`);
+
+        const audioUrl = `/static/music/song/${songId}.mp3`;
+        const audioElement = new Audio(audioUrl);
+
+        const playIcon = playButton.querySelector('.play');
+        const pauseIcon = playButton.querySelector('.pause');
+        const buttonText = playButton.querySelector('.button-text');
+
+        playButton.addEventListener('click', () => {
+            // pause all other songs
+
+            if (audioElement.paused) {
+                audioElement.play();
+                playIcon.classList.toggle('hidden');
+                pauseIcon.classList.toggle('hidden');
+                buttonText.innerHTML = 'Pause';
+                songCard.style.border = '1px solid #e2f8f6d7';
+            } else {
+                audioElement.pause();
+                playIcon.classList.toggle('hidden');
+                pauseIcon.classList.toggle('hidden');
+                buttonText.innerHTML = 'Play';
+                songCard.style.border = '1px solid rgba(41, 42, 45, 0.4)';
+            }
+        });
+    }
+</script> -->
+
 <body>
+    <script type="text/javascript">
+        const songList = JSON.parse(`{{songList | tojson | safe}}`);
+        let audioElements = {};
+        let lastPausedId = null;
+
+        /*
+        playIcon.classList.toggle('hidden');
+                        pauseIcon.classList.toggle('hidden');
+                        buttonText.innerHTML = 'Pause';
+                        songCard.style.border = '1px solid #e2f8f6d7';*/
+
+        function handlePlayPause(songId) {
+            const playButton = document.querySelector(`#playButton_${songId}`);
+            const songCard = document.querySelector(`#songCard_${songId}`);
+
+            console.log(audioElements[songId]);
+
+            if (audioElements[songId] != undefined) {
+                if (audioElements[songId].paused) {
+                    handlePlay(songId);
+                } else {
+                    handlePause(songId);
+                }
+            } else {
+                const audioUrl = `/static/music/song/${songId}.mp3`;
+                const audioElement = new Audio(audioUrl);
+                audioElements[songId] = audioElement;
+
+                audioElement.addEventListener('ended', () => {
+                    handlePause(songId);
+                });
+
+                handlePlay(songId);
+            }
+        }
+
+        function handlePlay(songId) {
+            const playButton = document.querySelector(`#playButton_${songId}`);
+            const songCard = document.querySelector(`#songCard_${songId}`);
+
+            const playIcon = playButton.querySelector('.play');
+            const pauseIcon = playButton.querySelector('.pause');
+            const buttonText = playButton.querySelector('.button-text');
+
+            const audioElement = audioElements[songId];
+
+            // stop all other songs
+            for (const key in audioElements) {
+                if (key != songId) {
+                    const playButton = document.querySelector(`#playButton_${key}`);
+                    const songCard = document.querySelector(`#songCard_${key}`);
+
+                    const playIcon = playButton.querySelector('.play');
+                    const pauseIcon = playButton.querySelector('.pause');
+                    const buttonText = playButton.querySelector('.button-text');
+
+                    audioElements[key].pause();
+                    playIcon.classList.remove('hidden');
+                    pauseIcon.classList.add('hidden');
+                    buttonText.innerHTML = 'Play';
+                    songCard.style.border = '1px solid rgba(41, 42, 45, 0.4)';
+                }
+            }
+
+
+            audioElement.play();
+            playIcon.classList.toggle('hidden');
+            pauseIcon.classList.toggle('hidden');
+            buttonText.innerHTML = 'Pause';
+            songCard.style.border = '1px solid #e2f8f6d7';
+        }
+
+        function handlePause(songId) {
+            const playButton = document.querySelector(`#playButton_${songId}`);
+            const songCard = document.querySelector(`#songCard_${songId}`);
+
+            const audioElement = audioElements[songId];
+
+            const playIcon = playButton.querySelector('.play');
+            const pauseIcon = playButton.querySelector('.pause');
+            const buttonText = playButton.querySelector('.button-text');
+
+            audioElement.pause();
+            playIcon.classList.toggle('hidden');
+            pauseIcon.classList.toggle('hidden');
+            buttonText.innerHTML = 'Play';
+            songCard.style.border = '1px solid rgba(41, 42, 45, 0.4)';
+        }
+
+        document.addEventListener('keydown', (event) => {
+            event.preventDefault();
+            if (event.code == 'Space') {
+                flag = true;
+                for (const key in audioElements) {
+                    if (!audioElements[key].paused) {
+                        handlePause(key);
+                        flag = false;
+                        lastPausedId = key;
+                    }
+                }
+
+                if (flag) {
+                    if (lastPausedId != null) {
+                        handlePlay(lastPausedId);
+                    } else {
+                        handlePlayPause(songList[0][0]);
+                    }
+                }
+            }
+        });
+    </script>
     <!--NavBar-->
     <header>
         <nav>
@@ -25,9 +169,6 @@
                 </a>
                 <span class="menu">
                     <li><a href="/">Profile</a></li>
-                    <li><a href="/">Albums</a></li>
-                    <li><a href="/">Songs</a></li>
-                    <li><a href="/">Playlists</a></li>
                     <li><a href="/">My Work</a></li>
                     <li><a href="/auth/logout">Logout</a></li>
                 </span>
@@ -43,10 +184,60 @@
         <div class="chip">
             Creator
         </div>
+
+        <div class="row">
+            <div class="bigButton">
+                <a href="/song/new">
+                    <i class="material-icons">add_circle</i>
+                    <span class="button-text">New Song</span>
+                </a>
+            </div>
+            <div class="bigButton">
+                <a href="/album/new">
+                    <i class="material-icons">add_circle</i>
+                    <span class="button-text">New Album</span>
+                </a>
+            </div>
+        </div>
+
+        <h2>My Songs</h2>
+
+        <!-- Song Cards -->
+        {% if songList | length == 0 %}
+        <h4>No Songs</h4>
+        {% else %}
+        <div class="songList">
+            {% for song in songList %}
+            <div class="songCard" id="songCard_{{song[0]}}">
+                <div class="songCard__image">
+                    <img src="/static/music/poster/{{song[0]}}.jpeg" alt="Song Image">
+                </div>
+                <div class="songCard__details">
+                    <h3>{{song[1]}}</h3>
+                    <!-- <p class="genreChip">{{song[2]}}</p> -->
+                </div>
+                <hr />
+                <div class="songCard__buttons">
+                    <a href="/song/{{song[0]}}/edit">
+                        <i class="material-icons">edit</i>
+                    </a>
+                    <div class="iconRow playButton" id="playButton_{{song[0]}}" onclick="handlePlayPause(`{{song[0]}}`)">
+                        <i class="material-icons play">play_arrow</i>
+                        <i class="material-icons pause hidden">pause</i>
+                        <p class="button-text">Play</p>
+                    </div>
+                    <a href="/song/{{song[0]}}/delete">
+                        <i class="material-icons">delete</i>
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
     </div>
 
     <!-- JS -->
-    <script type="text/javascript" src="../static/js/base.js"></script>
+    <script type="text/javascript" src="../../static/js/base.js"></script>
 </body>
 
 </html>

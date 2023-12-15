@@ -1,5 +1,5 @@
 * {
-  transition: all 0.1s ease;
+  transition: all 0.2s ease;
   font-family: "Trebuchet MS", sans-serif;
 }
 
@@ -71,6 +71,7 @@ h4 {
   body {
     font-size: 1rem;
   }
+
   h1 {
     font-size: 1.75rem;
   }
@@ -162,7 +163,7 @@ main {
   cursor: pointer;
 }
 
-.logo:hover > i {
+.logo:hover>i {
   background-image: linear-gradient(315deg, #161614 40%, #283406 74%);
 }
 
@@ -210,7 +211,7 @@ main {
   border-radius: 16px;
 }
 
-.nav-bar:hover > .cli {
+.nav-bar:hover>.cli {
   border-radius: 0px;
 }
 
@@ -253,7 +254,7 @@ main {
   border-radius: 16px;
 }
 
-.nav-bar li:hover > a {
+.nav-bar li:hover>a {
   color: black;
 }
 
@@ -264,6 +265,7 @@ main {
     --nav-load-time: 100ms;
     --nav-link-load-time: 10ms;
   }
+
   .menu {
     position: absolute;
     top: 58px;
@@ -279,7 +281,7 @@ main {
     height: fit-content;
     display: inline-flex;
     background-color: rgba(41, 42, 45, 0.4);
-  /* background-color: rgba(0, 0, 0, 0.4); */
+    /* background-color: rgba(0, 0, 0, 0.4); */
     -webkit-backdrop-filter: blur(10px);
     backdrop-filter: blur(10px);
     align-items: center;
@@ -331,24 +333,24 @@ main {
   }
 }
 
-.footer .__content > *:not(:last-child)::after {
+.footer .__content>*:not(:last-child)::after {
   content: "•";
   padding: 0 5px;
 }
 
 @media (max-width: 750px) {
-  .footer .__content > *:not(:last-child)::after {
+  .footer .__content>*:not(:last-child)::after {
     content: "";
     padding: 0;
   }
 }
 
-.footer .__content > *:last-child {
+.footer .__content>*:last-child {
   padding: 0 5px;
 }
 
 @media (max-width: 750px) {
-  .footer .__content > *:last-child {
+  .footer .__content>*:last-child {
     padding: 0;
   }
 }
@@ -440,7 +442,10 @@ a {
   padding-left: 4px;
 }
 
-input[type = "email"], input[type = "password"], input[type = "text"], input[type = "date"] {
+input[type="email"],
+input[type="password"],
+input[type="text"],
+input[type="date"] {
   border-radius: 8px;
   border: 1px solid rgba(41, 42, 45, 0.4);
   padding-top: 12px;
@@ -454,7 +459,36 @@ input[type = "email"], input[type = "password"], input[type = "text"], input[typ
   color: white;
 }
 
-input[type = "submit"] {
+textarea {
+  border-radius: 8px;
+  border: 1px solid rgba(41, 42, 45, 0.4);
+  padding-top: 12px;
+  padding-bottom: 12px;
+  padding-left: 8px;
+  padding-right: 8px;
+  font-size: 1rem;
+  margin-top: 8px;
+  width: 320px;
+  min-height: 160px;
+  background-color: rgba(41, 42, 45, 0.4);
+  color: white;
+}
+
+.select {
+  border-radius: 8px;
+  border: 1px solid rgba(41, 42, 45, 0.4);
+  padding-top: 12px;
+  padding-bottom: 12px;
+  padding-left: 8px;
+  font-size: 1rem;
+  margin-top: 8px;
+  width: 100% !important;
+  background-color: rgba(41, 42, 45, 0.4);
+  color: white;
+  appearance: none;
+}
+
+input[type="submit"] {
   border-radius: 8px;
   border: 1px solid rgba(41, 42, 45, 0.4);
   padding-top: 16px;
@@ -470,7 +504,7 @@ input[type = "submit"] {
   cursor: pointer;
 }
 
-input[type = "submit"]:hover {
+input[type="submit"]:hover {
   background-color: rgba(41, 42, 45, 0.6);
 }
 
@@ -504,10 +538,213 @@ input[type = "submit"]:hover {
   padding: 8px;
 }
 
-.radioButtonGroup .radioOption label{
+.radioButtonGroup .radioOption label {
   margin-left: 4px;
 }
 
 .radioButtonGroup .radioOption:hover {
   background-color: rgba(41, 42, 45, 0.6);
+}
+
+input[type="radio"] {
+  margin-right: 4px;
+}
+
+input[type="file"] {
+  border-radius: 8px;
+  border: 1px solid rgba(41, 42, 45, 0.4);
+  padding-top: 12px;
+  padding-bottom: 12px;
+  padding-left: 8px;
+  padding-right: 8px;
+  font-size: 1rem;
+  margin-top: 8px;
+  width: 320px;
+  background-color: rgba(41, 42, 45, 0.4);
+  color: white;
+  display: block;
+}
+
+/* Style that choose file button also and file name preview */
+input[type="file"]::-webkit-file-upload-button {
+  border-radius: 16px;
+  border: 1px solid rgba(41, 42, 45);
+  padding-top: 16px;
+  padding-bottom: 16px;
+  padding-left: 16px;
+  padding-right: 16px;
+  background-color: rgba(41, 42, 45, 0.4);
+  color: #f2f2f2;
+  cursor: pointer;
+}
+
+input[type="file"]::-webkit-file-upload-button:hover {
+  background-color: rgba(41, 42, 45, 0.6);
+}
+
+
+/* Popup form */
+/* .modal {
+  display: none;
+  position: fixed;
+  z-index: 1;
+  padding-top: 100px;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: #000;
+}
+
+.modal-content {
+  background-color: rgba(41, 42, 45, 0.4);
+  backdrop-filter: blur(10px);
+  margin: auto;
+  border: 1px solid rgba(41, 42, 45, 0.4);
+  border-radius: 16px;
+  width: 80%;
+  max-width: 600px;
+  color: white;
+}
+
+.close {
+  color: #aaaaaa;
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+  margin-right: 16px;
+  margin-top: 8px;
+}
+
+.close:hover,
+.close:focus {
+  color: #000;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+@media (max-width: 750px) {
+  .modal-content {
+    width: 100%;
+  }
+} */
+
+/* Popup form end */
+
+
+.songList {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  margin-top: 16px;
+  margin-bottom: 16px;
+}
+
+.songList .songCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin: 8px;
+  width: 240px;
+  height: 320px;
+  background-color: rgba(41, 42, 45, 0.4);
+  border-radius: 16px;
+  border: 1px solid rgba(41, 42, 45, 0.4);
+}
+
+.songList .songCard .songCard__image {
+  overflow: hidden;
+  border-radius: 16px;
+}
+
+.songList .songCard .songCard__image img {
+  height: 240px;
+  width: 240px;
+  object-fit: cover;
+  border-radius: 16px;
+}
+
+.songList .songCard .songCard__buttons {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+
+.songList .songCard .songCard__buttons a {
+  padding: 4px;
+  border: 1px solid rgba(41, 42, 45, 0.4);
+  border-radius: 8px;
+  margin-left: 4px;
+  margin-right: 4px;
+  cursor: pointer;
+}
+
+.songList .songCard .songCard__buttons a:hover {
+  background-color: rgba(41, 42, 45, 0.6);
+}
+
+.songList .songCard hr {
+  width: 100%;
+  border: 0.5px solid rgba(41, 42, 45, 0.4);
+}
+
+.songList .songCard h3 {
+  font-size: 1.25rem;
+  margin-top: 8px;
+  margin-bottom: 8px;
+}
+
+.songList .songCard .genreChip {
+  font-size: 1rem;
+  background-color: rgb(0, 0, 0);
+  border-radius: 8px;
+  padding: 8px;
+  margin-top: 8px;
+  margin-bottom: 8px;
+  width: fit-content;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* scale image but within bounds of card on hover */
+
+.songList .songCard:hover>.songCard__image img {
+  transform: scale(1.2);
+}
+
+.iconRow {
+  margin-left: auto;
+  margin-right: auto;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.playButton {
+  vertical-align: middle;
+  justify-content: center;
+  align-items: center;
+  border: 1px solid rgba(41, 42, 45);
+  border-radius: 16px;
+  cursor: pointer;
+  padding: 4px;
+  color: black;
+  background-image: linear-gradient(315deg, #a9f9f1 50%, #7cfaf8 74%);
+}
+
+.playButton .button-text {
+  font-size: 1rem;
+  padding: 4px;
+  margin: 0px;
+}
+
+.playButton .hidden {
+  display: none;
 }
