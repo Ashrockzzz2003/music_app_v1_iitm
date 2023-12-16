@@ -4,10 +4,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Music App | Edit Genre</title>
+    <title>Music App | My Albums</title>
 
     <!-- Styles -->
     <link rel="stylesheet" href="../../static/css/base.css">
+    <link rel="stylesheet" href="../../static/css/album.css">
 
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.0.0/crypto-js.min.js"></script>
@@ -24,7 +25,6 @@
                 </a>
                 <span class="menu">
                     <li><a href="/">Profile</a></li>
-                    <li><a href="/album">My Albums</a></li>
                     <li><a href="/genre">Manage Genres</a></li>
                     <li><a href="/creator/dashboard">Dashboard</a></li>
                     <li><a href="/auth/logout">Logout</a></li>
@@ -36,24 +36,42 @@
         </nav>
     </header>
 
+    <!--Content-->
     <div class="content">
-        <div class="form-container">
-            <form action="/genre/{{ genreId }}/edit" method="POST">
-                <h1>Update Genre</h1>
-                <hr />
-                <div class="input-container">
-                    <label for="genreName">Genre Name</label>
-                    <input type="text" value="{{genreName}}" name="genreName" id="genreName" placeholder="Enter genre's name" style="width: 540px;" required />
-                </div>
-                <div class="input-container">
-                    <label for="genreDescription">Tell something about the genre</label>
-                    <textarea type="text" name="genreDescription" id="genreDescription" placeholder="Genre Description>" style="width: 540px;">{{genreDescription}}</textarea>
-                </div>
-                <div class="input-container">
-                    <input type="submit" title="Update Genre" />
-                </div>
-            </form>
+        <h1>Albums Created by Me</h1>
+        <div class="bigButton">
+            <a href="/album/new">
+                <i class="material-icons">add_circle</i>
+                <span class="button-text">New Album</span>
+            </a>
         </div>
+        {% if albumList | length == 0 %}
+        <div class="empty">
+            <h3 style="text-align: center;">No Albums Found</h3>
+            <p style="text-align: center;">Click on the button above to add a new album</p>
+        </div>
+        {% else %}
+        <div class="albumList">
+            {% for album in albumList %}
+            <div class="albumCard">
+                <div class="albumCard__image">
+                    <img src="/static/music/album/{{album[0]}}.{{album[11]}}" alt="Album Image">
+                </div>
+                <div class="about">
+                    <h3>{{album[1]}}</h3>
+                    <p>{{album[2]}}</p>
+                </div>
+                <hr />
+                <div class="albumCard__buttons">
+                    <div class="iconRow playButton">
+                        <i class="material-icons play">edit</i>
+                        <p class="button-text">Edit Album</p>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
     </div>
 
     <!-- {% with messages = get_flashed_messages(with_categories=true) %}

@@ -1168,6 +1168,193 @@ def editGenre(genreId):
                 return redirect(url_for('creatorDashboardScreen'))
             elif userRoleId == 0:
                 return redirect(url_for('adminDashboard'))
+            
+
+# /album
+@app.route('/album', methods=['GET'])
+def albumScreen():
+    try:
+        secretToken = session['secretToken']
+        userId = session['userId']
+        userName = session['userName']
+        userEmail = session['userEmail']
+        userRoleId = session['userRoleId']
+
+        if userRoleId != 2 and userRoleId != 0:
+            flash('Unauthorized Access', 'danger')
+            return redirect(url_for('loginScreen'))
+        
+        if len(str(secretToken)) == 0 or len(str(userId)) == 0 or len(str(userName)) == 0 or len(str(userEmail)) == 0 or len(str(userRoleId)) == 0:
+            flash('Session Expired', 'danger')
+            return redirect(url_for('loginScreen'))
+        
+        decryptedToken = validateToken(secretToken.split(',')[0], secretToken.split(',')[1], secretToken.split(',')[2])
+
+        if decryptedToken == -2:
+            flash('Session Expired', 'danger')
+            return redirect(url_for('loginScreen'))
+        elif decryptedToken == -1:
+            flash('Session Expired', 'danger')
+            return redirect(url_for('loginScreen'))
+        
+        db_connection = sqlite3.connect('./schema/app_data.db')
+        db_cursor = db_connection.cursor()
+
+        # Get all albums
+
+        if userRoleId == 2:
+            db_cursor.execute(f"SELECT * FROM albumData WHERE createdBy = ?", (userId,))
+            albumList = db_cursor.fetchall()
+        elif userRoleId == 0:
+            db_cursor.execute(f"SELECT * FROM albumData")
+            albumList = db_cursor.fetchall()
+
+        db_connection.close()
+
+        if albumList is None:
+            flash('No Albums found to add new songs! Add new Albums to continue', 'danger')
+            return redirect(url_for('addNewAlbum'))
+        
+        if userRoleId == 2:
+            return render_template('creator/album.html', albumList=albumList)
+        elif userRoleId == 0:
+            return render_template('admin/album.html', albumList=albumList)
+        
+    except Exception as e:
+        f = open("logs/errorLogs.txt", "a")
+        f.write(f"[ERROR] {datetime.now()}: {e}\n")
+        f.close()
+        flash('Something Went Wrong.\nPlease try again later.', 'danger')
+        return redirect(url_for('loginScreen'))      
+
+@app.route('/album/new', methods=['GET','POST'])
+def addNewAlbum():
+    if request.method == "GET":
+        try:
+            secretToken = session['secretToken']
+            userId = session['userId']
+            userName = session['userName']
+            userEmail = session['userEmail']
+            userRoleId = session['userRoleId']
+
+            if userRoleId != 2 and userRoleId != 0:
+                flash('Unauthorized Access', 'danger')
+                return redirect(url_for('loginScreen'))
+            
+            if len(str(secretToken)) == 0 or len(str(userId)) == 0 or len(str(userName)) == 0 or len(str(userEmail)) == 0 or len(str(userRoleId)) == 0:
+                flash('Session Expired', 'danger')
+                return redirect(url_for('loginScreen'))
+
+            decryptedToken = validateToken(secretToken.split(',')[0], secretToken.split(',')[1], secretToken.split(',')[2])
+
+            if decryptedToken == -2:
+                flash('Session Expired', 'danger')
+                return redirect(url_for('loginScreen'))
+
+            db_connection = sqlite3.connect('./schema/app_data.db')
+            db_cursor = db_connection.cursor()
+
+            # Check if user is creator
+            db_cursor.execute(f"SELECT * FROM userData WHERE userId = ?", (userId,))
+            userData = db_cursor.fetchone()
+
+            if userData is None:
+                flash('Unauthorized Access', 'danger')
+                return redirect(url_for('loginScreen'))
+
+            db_connection.close()
+            
+            if userRoleId == 2:
+                return render_template('creator/new_album.html')
+            elif userRoleId == 0:
+                return render_template('admin/new_album.html')
+            
+        except Exception as e:
+            print(e)
+            f = open("logs/errorLogs.txt", "a")
+            f.write(f"[ERROR] {datetime.now()}: {e}\n")
+            f.close()
+            flash('Something Went Wrong.\nPlease try again later.', 'danger')
+            if userRoleId == 2:
+                return redirect(url_for('creatorDashboardScreen'))
+            elif userRoleId == 0:
+                return redirect(url_for('adminDashboard'))
+            
+    elif request.method == "POST":
+        try:
+            secretToken = session['secretToken']
+            userId = session['userId']
+            userName = session['userName']
+            userEmail = session['userEmail']
+            userRoleId = session['userRoleId']
+            
+            if userRoleId != 2 and userRoleId != 0:
+                flash('Unauthorized Access', 'danger')
+                return redirect(url_for('loginScreen'))
+
+            if len(str(secretToken)) == 0 or len(str(userId)) == 0 or len(str(userName)) == 0 or len(str(userEmail)) == 0 or len(str(userRoleId)) == 0:
+                flash('Session Expired', 'danger')
+                return redirect(url_for('loginScreen'))
+
+            decryptedToken = validateToken(secretToken.split(',')[0], secretToken.split(',')[1], secretToken.split(',')[2])
+
+            if decryptedToken == -2:
+                flash('Session Expired', 'danger')
+                return redirect(url_for('loginScreen'))
+
+            albumName = request.form.get('albumName')
+            albumDescription = request.form.get('albumDescription')
+            releaseDate = request.form.get('releaseDate')
+            albumCover = request.files['albumCover']
+
+            if len(str(albumName)) == 0 or len(str(albumDescription)) == 0 or len(str(releaseDate)) == 0 or len(str(albumCover.filename)) == 0:
+                flash('Please fill all the fields', 'danger')
+                if userRoleId == 2:
+                    return redirect(url_for('creatorDashboardScreen'))
+                elif userRoleId == 0:
+                    return redirect(url_for('adminDashboard'))
+
+            db_connection = sqlite3.connect('./schema/app_data.db')
+            db_cursor = db_connection.cursor()
+
+            # Check if album already exists
+            db_cursor.execute(f"SELECT * FROM albumData WHERE albumName = ?", (albumName,))
+            albumData = db_cursor.fetchone()
+
+            if albumData is not None:
+                flash('Album already exists', 'danger')
+                return redirect(url_for('addNewAlbum'))
+
+            db_cursor.execute(f"INSERT INTO albumData (albumName, albumDescription, releaseDate, isActive, createdBy, albumCoverExt) VALUES (?, ?, ?, ?, ?, ?)", (albumName, albumDescription, releaseDate, "1", userId, albumCover.filename.split('.')[-1]))
+            affectedRows = db_cursor.rowcount
+            if affectedRows == 0:
+                flash('Something went wrong', 'danger')
+                return redirect(url_for('addNewAlbum'))
+            
+            albumId = db_cursor.lastrowid
+
+            db_connection.commit()
+            db_connection.close()
+
+            # Upload album cover
+            albumCover.save(f"static/music/album/{albumId}.{albumCover.filename.split('.')[-1]}")
+
+            if userRoleId == 2:
+                return redirect(url_for('creatorDashboardScreen'))
+            elif userRoleId == 0:
+                return redirect(url_for('adminDashboard'))
+            
+
+        except Exception as e:
+            print(e)
+            f = open("logs/errorLogs.txt", "a")
+            f.write(f"[ERROR] {datetime.now()}: {e}\n")
+            f.close()
+            flash('Something Went Wrong.\nPlease try again later.', 'danger')
+            if userRoleId == 2:
+                return redirect(url_for('creatorDashboardScreen'))
+            elif userRoleId == 0:
+                return redirect(url_for('adminDashboard'))
 
 if __name__ == '__main__':
     # reinitializeDatabase()

@@ -26,6 +26,7 @@
                 <span class="menu">
                     <li><a href="/">Profile</a></li>
                     <li><a href="/creator/dashboard">Dashboard</a></li>
+                    <li><a href="/album">My Albums</a></li>
                     <li><a href="/auth/logout">Logout</a></li>
                 </span>
                 <span class="logo menu-trigger hidden">
@@ -53,7 +54,10 @@
         <div class="genreList">
             {% for genre in genreList %}
             <div class="genreCard">
-                <h3>{{genre[1]}}</h3>
+                <div class="about">
+                    <h3>{{genre[1]}}</h3>
+                    <p>{{genre[2]}}</p>
+                </div>
                 <hr />
                 <div class="genreCard__buttons">
                     <a href="/genre/{{genre[0]}}/edit">

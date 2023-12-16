@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Music App | Edit Genre</title>
+    <title>Music App | New Album</title>
 
     <!-- Styles -->
     <link rel="stylesheet" href="../../static/css/base.css">
@@ -38,25 +38,33 @@
 
     <div class="content">
         <div class="form-container">
-            <form action="/genre/{{ genreId }}/edit" method="POST">
-                <h1>Update Genre</h1>
+            <form action="/album/new" method="POST" enctype="multipart/form-data">
+                <h1>New Album</h1>
                 <hr />
                 <div class="input-container">
-                    <label for="genreName">Genre Name</label>
-                    <input type="text" value="{{genreName}}" name="genreName" id="genreName" placeholder="Enter genre's name" style="width: 540px;" required />
+                    <label for="albumName">Album Title</label>
+                    <input type="text" name="albumName" id="albumName" placeholder="Enter Album's title" style="width: 540px;" required />
                 </div>
                 <div class="input-container">
-                    <label for="genreDescription">Tell something about the genre</label>
-                    <textarea type="text" name="genreDescription" id="genreDescription" placeholder="Genre Description>" style="width: 540px;">{{genreDescription}}</textarea>
+                    <label for="albumDescription">Tell something about the album</label>
+                    <textarea type="text" name="albumDescription" id="albumDescription" placeholder="Album Description>" style="width: 540px;"></textarea>
                 </div>
                 <div class="input-container">
-                    <input type="submit" title="Update Genre" />
+                    <label for="albumCover">Album Cover/Poster</label>
+                    <input type="file" name="albumCover" id="albumCover" accept="image/*" style="width: 540px;" required />
+                </div>
+                <div class="input-container">
+                    <label for="releaseDate">Album Release Date</label>
+                    <input type="date" name="releaseDate" id="releaseDate" placeholder="Choose Album Release Date" style="width: 540px;" required />
+                </div>
+                <div class="input-container">
+                    <input type="submit" title="New Album" />
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- {% with messages = get_flashed_messages(with_categories=true) %}
+    {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
     {% for category, message in messages %}
     <script>
@@ -64,7 +72,7 @@
     </script>
     {% endfor %}
     {% endif %}
-    {% endwith %} -->
+    {% endwith %}
 
     <!-- JS -->
     <script type="text/javascript" src="../../static/js/base.js"></script>
