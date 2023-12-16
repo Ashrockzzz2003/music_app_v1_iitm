@@ -479,8 +479,6 @@ def creatorDashboardScreen():
 
 
 # /song
-
-
 @app.route("/song", methods=["GET"])
 def songListScreen():
     try:
@@ -490,9 +488,17 @@ def songListScreen():
         userEmail = session["userEmail"]
         userRoleId = session["userRoleId"]
         searchQuery = request.args.get("search")
+        genreQuery = request.args.get("songGenre")
+        languageQuery = request.args.get("songLanuage")
 
         if searchQuery is None:
             searchQuery = ""
+
+        if genreQuery is None:
+            genreQuery = ""
+
+        if languageQuery is None:
+            languageQuery = ""
 
         if (
             len(str(secretToken)) == 0
@@ -520,18 +526,46 @@ def songListScreen():
         db_connection = sqlite3.connect("./schema/app_data.db")
         db_cursor = db_connection.cursor()
 
+        print(f"{searchQuery}, {genreQuery}, {languageQuery}")
+
         if userRoleId == 2:
             # Get all songs
             db_cursor.execute(
-                f"SELECT s.songId, s.songName, g.genreName, s.songLyrics, s.audioFileExt, s.imageFileExt, s.isActive FROM songData AS s JOIN genreData AS g ON g.genreId = s.songGenreId JOIN languageData AS l ON l.languageId = s.songLanguageId WHERE s.createdBy = ? AND s.songName LIKE ?",
+                f"SELECT s.songId, s.songName, g.genreName, s.songLyrics, s.audioFileExt, s.imageFileExt, s.isActive FROM songData AS s JOIN genreData AS g ON g.genreId = s.songGenreId JOIN languageData AS l ON l.languageId = s.songLanguageId WHERE s.createdBy = ? AND s.songName LIKE ? ORDER BY s.createdAt DESC",
                 (userId, f"%{searchQuery}%"),
             )
         else:
             # Get all songs
-            db_cursor.execute(
-                f"SELECT s.songId, s.songName, g.genreName, s.songLyrics, s.audioFileExt, s.imageFileExt, s.isActive FROM songData AS s JOIN genreData AS g ON g.genreId = s.songGenreId JOIN languageData AS l ON l.languageId = s.songLanguageId WHERE s.songName LIKE ?",
-                (f"%{searchQuery}%",),
-            )
+            if genreQuery != "" and languageQuery != "":
+                db_cursor.execute(
+                    f"SELECT s.songId, s.songName, g.genreName, s.songLyrics, s.audioFileExt, s.imageFileExt, s.isActive FROM songData AS s JOIN genreData AS g ON g.genreId = s.songGenreId JOIN languageData AS l ON l.languageId = s.songLanguageId WHERE s.songName LIKE ? AND g.genreId = ? AND l.languageId = ? AND s.isActive = '1' ORDER BY s.createdAt DESC",
+                    (
+                        f"%{searchQuery}%",
+                        genreQuery,
+                        languageQuery,
+                    ),
+                )
+            elif genreQuery != "" and languageQuery == "":
+                db_cursor.execute(
+                    f"SELECT s.songId, s.songName, g.genreName, s.songLyrics, s.audioFileExt, s.imageFileExt, s.isActive FROM songData AS s JOIN genreData AS g ON g.genreId = s.songGenreId JOIN languageData AS l ON l.languageId = s.songLanguageId WHERE s.songName LIKE ? AND g.genreId = ? AND s.isActive = '1' ORDER BY s.createdAt DESC",
+                    (
+                        f"%{searchQuery}%",
+                        genreQuery,
+                    ),
+                )
+            elif genreQuery == "" and languageQuery != "":
+                db_cursor.execute(
+                    f"SELECT s.songId, s.songName, g.genreName, s.songLyrics, s.audioFileExt, s.imageFileExt, s.isActive FROM songData AS s JOIN genreData AS g ON g.genreId = s.songGenreId JOIN languageData AS l ON l.languageId = s.songLanguageId WHERE s.songName LIKE ? AND l.languageId = ? AND s.isActive = '1' ORDER BY s.createdAt DESC",
+                    (
+                        f"%{searchQuery}%",
+                        languageQuery,
+                    ),
+                )
+            else:
+                db_cursor.execute(
+                    f"SELECT s.songId, s.songName, g.genreName, s.songLyrics, s.audioFileExt, s.imageFileExt, s.isActive FROM songData AS s JOIN genreData AS g ON g.genreId = s.songGenreId JOIN languageData AS l ON l.languageId = s.songLanguageId WHERE s.songName LIKE ? AND s.isActive = '1' ORDER BY s.createdAt DESC",
+                    (f"%{searchQuery}%",),
+                )
 
         # Get Song Count
         songList = db_cursor.fetchall()
@@ -541,12 +575,22 @@ def songListScreen():
 
         songCount = len(songList)
 
+        # Get all genres
+        db_cursor.execute(f"SELECT * FROM genreData")
+        genreList = db_cursor.fetchall()
+
+        # Get all languages
+        db_cursor.execute(f"SELECT * FROM languageData")
+        languageList = db_cursor.fetchall()
+
         db_connection.close()
 
         if userRoleId == 2:
             return render_template(
                 "creator/song_list.html",
                 songList=songList,
+                genreList=genreList,
+                languageList=languageList,
                 songCount=songCount,
                 searchQuery=searchQuery,
             )
@@ -555,6 +599,8 @@ def songListScreen():
             return render_template(
                 "admin/song_list.html",
                 songList=songList,
+                genreList=genreList,
+                languageList=languageList,
                 songCount=songCount,
                 searchQuery=searchQuery,
             )
@@ -563,8 +609,11 @@ def songListScreen():
             return render_template(
                 "user/song_list.html",
                 songList=songList,
-                songCount=songCount,
+                genreList=genreList,
+                languageList=languageList,
                 searchQuery=searchQuery,
+                songGenre=int(genreQuery) if genreQuery != "" else "",
+                songLanguage=int(languageQuery) if languageQuery != "" else "",
             )
 
         else:
@@ -1234,6 +1283,7 @@ def activateSong(songId):
             flash("Something Went Wrong.\nPlease try again later.", "danger")
             return redirect(url_for("loginScreen"))
 
+
 # /language
 @app.route("/language", methods=["GET"])
 def languageScreen():
@@ -1247,7 +1297,7 @@ def languageScreen():
         if userRoleId != 2 and userRoleId != 0:
             flash("Unauthorized Access", "danger")
             return redirect(url_for("loginScreen"))
-        
+
         if (
             len(str(secretToken)) == 0
             or len(str(userId)) == 0
@@ -1257,7 +1307,7 @@ def languageScreen():
         ):
             flash("Session Expired", "danger")
             return redirect(url_for("loginScreen"))
-        
+
         decryptedToken = validateToken(
             secretToken.split(",")[0],
             secretToken.split(",")[1],
@@ -1270,7 +1320,7 @@ def languageScreen():
         elif decryptedToken == -1:
             flash("Session Expired", "danger")
             return redirect(url_for("loginScreen"))
-        
+
         db_connection = sqlite3.connect("./schema/app_data.db")
         db_cursor = db_connection.cursor()
 
@@ -1280,28 +1330,28 @@ def languageScreen():
         languageList = db_cursor.fetchall()
 
         db_connection.close()
-        
 
         if languageList is None:
             languageList = []
 
         if userRoleId == 2:
             return render_template("creator/language.html", languageList=languageList)
-        
+
         elif userRoleId == 0:
             return render_template("admin/language.html", languageList=languageList)
-        
+
         else:
             flash("Unauthorized Access", "danger")
             return redirect(url_for("loginScreen"))
-        
+
     except Exception as e:
         f = open("logs/errorLogs.txt", "a")
         f.write(f"[ERROR] {datetime.now()}: {e}\n")
         f.close()
         flash("Something Went Wrong.\nPlease try again later.", "danger")
         return redirect(url_for("loginScreen"))
-    
+
+
 @app.route("/language/new", methods=["GET", "POST"])
 def addNewLanguage():
     if request.method == "POST":
@@ -1315,7 +1365,7 @@ def addNewLanguage():
             if userRoleId != 2 and userRoleId != 0:
                 flash("Unauthorized Access", "danger")
                 return redirect(url_for("loginScreen"))
-            
+
             if (
                 len(str(secretToken)) == 0
                 or len(str(userId)) == 0
@@ -1325,7 +1375,7 @@ def addNewLanguage():
             ):
                 flash("Session Expired", "danger")
                 return redirect(url_for("loginScreen"))
-            
+
             decryptedToken = validateToken(
                 secretToken.split(",")[0],
                 secretToken.split(",")[1],
@@ -1338,43 +1388,47 @@ def addNewLanguage():
             elif decryptedToken == -1:
                 flash("Session Expired", "danger")
                 return redirect(url_for("loginScreen"))
-            
+
             languageName = request.form.get("languageName")
 
             if len(str(languageName)) == 0:
                 flash("Please fill all the fields", "danger")
                 return redirect(url_for("addNewLanguage"))
-            
+
             db_connection = sqlite3.connect("./schema/app_data.db")
             db_cursor = db_connection.cursor()
 
             # Check if language already exists
-            db_cursor.execute(f"SELECT * FROM languageData WHERE languageName = ?", (languageName,))
+            db_cursor.execute(
+                f"SELECT * FROM languageData WHERE languageName = ?", (languageName,)
+            )
             languageData = db_cursor.fetchone()
 
             if languageData is not None:
                 flash("Language already exists", "danger")
                 return redirect(url_for("addNewLanguage"))
-            
-            db_cursor.execute(f"INSERT INTO languageData (languageName) VALUES (?)", (languageName,))
+
+            db_cursor.execute(
+                f"INSERT INTO languageData (languageName) VALUES (?)", (languageName,)
+            )
 
             affectedRows = db_cursor.rowcount
             if affectedRows == 0:
                 flash("Something went wrong", "danger")
                 return redirect(url_for("addNewLanguage"))
-            
+
             db_connection.commit()
             db_connection.close()
 
             return redirect(url_for("languageScreen"))
-            
+
         except Exception as e:
             f = open("logs/errorLogs.txt", "a")
             f.write(f"[ERROR] {datetime.now()}: {e}\n")
             f.close()
             flash("Something Went Wrong.\nPlease try again later.", "danger")
             return redirect(url_for("loginScreen"))
-        
+
     elif request.method == "GET":
         try:
             secretToken = session["secretToken"]
@@ -1386,7 +1440,7 @@ def addNewLanguage():
             if userRoleId != 2 and userRoleId != 0:
                 flash("Unauthorized Access", "danger")
                 return redirect(url_for("loginScreen"))
-            
+
             if (
                 len(str(secretToken)) == 0
                 or len(str(userId)) == 0
@@ -1396,7 +1450,7 @@ def addNewLanguage():
             ):
                 flash("Session Expired", "danger")
                 return redirect(url_for("loginScreen"))
-            
+
             decryptedToken = validateToken(
                 secretToken.split(",")[0],
                 secretToken.split(",")[1],
@@ -1409,16 +1463,17 @@ def addNewLanguage():
             elif decryptedToken == -1:
                 flash("Session Expired", "danger")
                 return redirect(url_for("loginScreen"))
-            
+
             return render_template("creator/new_language.html")
-        
+
         except Exception as e:
             f = open("logs/errorLogs.txt", "a")
             f.write(f"[ERROR] {datetime.now()}: {e}\n")
             f.close()
             flash("Something Went Wrong.\nPlease try again later.", "danger")
             return redirect(url_for("loginScreen"))
-        
+
+
 @app.route("/language/<languageId>/edit", methods=["GET", "POST"])
 def editLanguage(languageId):
     if request.method == "GET":
@@ -1432,7 +1487,7 @@ def editLanguage(languageId):
             if userRoleId != 2 and userRoleId != 0:
                 flash("Unauthorized Access", "danger")
                 return redirect(url_for("loginScreen"))
-            
+
             if (
                 len(str(secretToken)) == 0
                 or len(str(userId)) == 0
@@ -1442,7 +1497,7 @@ def editLanguage(languageId):
             ):
                 flash("Session Expired", "danger")
                 return redirect(url_for("loginScreen"))
-            
+
             decryptedToken = validateToken(
                 secretToken.split(",")[0],
                 secretToken.split(",")[1],
@@ -1455,32 +1510,38 @@ def editLanguage(languageId):
             elif decryptedToken == -1:
                 flash("Session Expired", "danger")
                 return redirect(url_for("loginScreen"))
-            
+
             db_connection = sqlite3.connect("./schema/app_data.db")
             db_cursor = db_connection.cursor()
 
             # Get language data
-            db_cursor.execute(f"SELECT * FROM languageData WHERE languageId = ?", (languageId,))
+            db_cursor.execute(
+                f"SELECT * FROM languageData WHERE languageId = ?", (languageId,)
+            )
             languageData = db_cursor.fetchone()
 
             if languageData is None:
                 flash("Language not found", "danger")
                 return redirect(url_for("languageScreen"))
-            
+
             languageId = languageData[0]
             languageName = languageData[1]
 
             db_connection.close()
-            
-            return render_template("creator/edit_language.html", languageId=languageId, languageName=languageName)
-        
+
+            return render_template(
+                "creator/edit_language.html",
+                languageId=languageId,
+                languageName=languageName,
+            )
+
         except Exception as e:
             f = open("logs/errorLogs.txt", "a")
             f.write(f"[ERROR] {datetime.now()}: {e}\n")
             f.close()
             flash("Something Went Wrong.\nPlease try again later.", "danger")
             return redirect(url_for("loginScreen"))
-        
+
     elif request.method == "POST":
         try:
             secretToken = session["secretToken"]
@@ -1492,7 +1553,7 @@ def editLanguage(languageId):
             if userRoleId != 2 and userRoleId != 0:
                 flash("Unauthorized Access", "danger")
                 return redirect(url_for("loginScreen"))
-            
+
             if (
                 len(str(secretToken)) == 0
                 or len(str(userId)) == 0
@@ -1502,7 +1563,7 @@ def editLanguage(languageId):
             ):
                 flash("Session Expired", "danger")
                 return redirect(url_for("loginScreen"))
-            
+
             decryptedToken = validateToken(
                 secretToken.split(",")[0],
                 secretToken.split(",")[1],
@@ -1515,38 +1576,44 @@ def editLanguage(languageId):
             elif decryptedToken == -1:
                 flash("Session Expired", "danger")
                 return redirect(url_for("loginScreen"))
-            
+
             languageName = request.form.get("languageName")
 
             if len(str(languageName)) == 0:
                 flash("Please fill all the fields", "danger")
                 return redirect(url_for("addNewLanguage"))
-            
+
             db_connection = sqlite3.connect("./schema/app_data.db")
             db_cursor = db_connection.cursor()
 
             # Check if language already exists
-            db_cursor.execute(f"SELECT * FROM languageData WHERE languageName = ? AND languageId != ?", (languageName, languageId))
+            db_cursor.execute(
+                f"SELECT * FROM languageData WHERE languageName = ? AND languageId != ?",
+                (languageName, languageId),
+            )
 
             languageData = db_cursor.fetchone()
 
             if languageData is not None:
                 flash("Language already exists", "danger")
                 return redirect(url_for("addNewLanguage"))
-            
-            db_cursor.execute(f"UPDATE languageData SET languageName = ? WHERE languageId = ?", (languageName, languageId))
+
+            db_cursor.execute(
+                f"UPDATE languageData SET languageName = ? WHERE languageId = ?",
+                (languageName, languageId),
+            )
 
             affectedRows = db_cursor.rowcount
             if affectedRows == 0:
                 flash("Something went wrong", "danger")
                 return redirect(url_for("addNewLanguage"))
-            
+
             db_connection.commit()
 
             db_connection.close()
 
             return redirect(url_for("languageScreen"))
-        
+
         except Exception as e:
             f = open("logs/errorLogs.txt", "a")
             f.write(f"[ERROR] {datetime.now()}: {e}\n")
@@ -1805,9 +1872,14 @@ def editGenre(genreId):
             db_connection = sqlite3.connect("./schema/app_data.db")
             db_cursor = db_connection.cursor()
 
-            # Get genre data
-            db_cursor.execute(f"SELECT * FROM genreData WHERE genreId = ?", (genreId,))
-            genreData = db_cursor.fetchone()
+            if userRoleId != 0:
+                # Get genre data
+                db_cursor.execute(f"SELECT * FROM genreData WHERE genreId = ? AND createdBy = ?", (genreId,userId))
+                genreData = db_cursor.fetchone()
+            else:
+                # Get genre data
+                db_cursor.execute(f"SELECT * FROM genreData WHERE genreId = ?", (genreId,))
+                genreData = db_cursor.fetchone()
 
             if genreData is None:
                 flash("Genre not found", "danger")
@@ -2006,10 +2078,15 @@ def albumScreen():
         # Get all albums
 
         if userRoleId == 2:
-            db_cursor.execute(f"SELECT * FROM albumData WHERE createdBy = ? AND albumName LIKE ?", (userId, f"%{searchQuery}%"))
+            db_cursor.execute(
+                f"SELECT * FROM albumData WHERE createdBy = ? AND albumName LIKE ?",
+                (userId, f"%{searchQuery}%"),
+            )
             albumList = db_cursor.fetchall()
         elif userRoleId == 0:
-            db_cursor.execute(f"SELECT * FROM albumData WHERE albumName LIKE ?", (f"%{searchQuery}%",))
+            db_cursor.execute(
+                f"SELECT * FROM albumData WHERE albumName LIKE ?", (f"%{searchQuery}%",)
+            )
             albumList = db_cursor.fetchall()
 
         db_connection.close()
@@ -2021,9 +2098,13 @@ def albumScreen():
             return redirect(url_for("addNewAlbum"))
 
         if userRoleId == 2:
-            return render_template("creator/album.html", albumList=albumList, searchQuery=searchQuery)
+            return render_template(
+                "creator/album.html", albumList=albumList, searchQuery=searchQuery
+            )
         elif userRoleId == 0:
-            return render_template("admin/album.html", albumList=albumList, searchQuery=searchQuery)
+            return render_template(
+                "admin/album.html", albumList=albumList, searchQuery=searchQuery
+            )
 
     except Exception as e:
         f = open("logs/errorLogs.txt", "a")
@@ -2745,6 +2826,698 @@ def linkSongToAlbum(albumId, songId):
 
             return redirect(url_for("albumScreen"))
 
+        except Exception as e:
+            print(e)
+            f = open("logs/errorLogs.txt", "a")
+            f.write(f"[ERROR] {datetime.now()}: {e}\n")
+            f.close()
+
+            flash("Something Went Wrong.\nPlease try again later.", "danger")
+            return redirect(url_for("loginScreen"))
+
+
+# /playlist
+@app.route("/playlist", methods=["GET"])
+def playlistScreen():
+    try:
+        secretToken = session["secretToken"]
+        userId = session["userId"]
+        userName = session["userName"]
+        userEmail = session["userEmail"]
+        userRoleId = session["userRoleId"]
+        searchQuery = request.args.get("search")
+
+        if searchQuery is None:
+            searchQuery = ""
+
+        if userRoleId != 1:
+            flash("Unauthorized Access", "danger")
+            return redirect(url_for("loginScreen"))
+
+        if (
+            len(str(secretToken)) == 0
+            or len(str(userId)) == 0
+            or len(str(userName)) == 0
+            or len(str(userEmail)) == 0
+            or len(str(userRoleId)) == 0
+        ):
+            flash("Session Expired", "danger")
+            return redirect(url_for("loginScreen"))
+
+        decryptedToken = validateToken(
+            secretToken.split(",")[0],
+            secretToken.split(",")[1],
+            secretToken.split(",")[2],
+        )
+
+        if decryptedToken == -2:
+            flash("Session Expired", "danger")
+            return redirect(url_for("loginScreen"))
+        elif decryptedToken == -1:
+            flash("Session Expired", "danger")
+            return redirect(url_for("loginScreen"))
+
+        db_connection = sqlite3.connect("./schema/app_data.db")
+        db_cursor = db_connection.cursor()
+
+        # Get all playlists
+        db_cursor.execute(
+            f"SELECT * FROM playlistData WHERE playlistName LIKE ? AND userId = ?",
+            (f"%{searchQuery}%", userId),
+        )
+        playlistList = db_cursor.fetchall()
+
+        # Get public playlists
+        db_cursor.execute(
+            f"SELECT * FROM playlistData WHERE playlistName LIKE ? AND isPublic = '1' AND userId != ?",
+            (f"%{searchQuery}%", userId),
+        )
+        publicPlaylistList = db_cursor.fetchall()
+
+        db_connection.close()
+
+        if playlistList is None:
+            playlistList = []
+
+        return render_template(
+            "user/playlist.html", playlistList=playlistList, searchQuery=searchQuery, publicPlaylistList=publicPlaylistList
+        )
+
+    except Exception as e:
+        f = open("logs/errorLogs.txt", "a")
+        f.write(f"[ERROR] {datetime.now()}: {e}\n")
+        f.close()
+        flash("Something Went Wrong.\nPlease try again later.", "danger")
+        return redirect(url_for("loginScreen"))
+
+
+@app.route("/playlist/<playlistId>", methods=["GET"])
+def playlistDetails(playlistId):
+    try:
+        secretToken = session["secretToken"]
+        userId = session["userId"]
+        userName = session["userName"]
+        userEmail = session["userEmail"]
+        userRoleId = session["userRoleId"]
+
+        if (
+            len(str(secretToken)) == 0
+            or len(str(userId)) == 0
+            or len(str(userName)) == 0
+            or len(str(userEmail)) == 0
+            or len(str(userRoleId)) == 0
+        ):
+            flash("Session Expired", "danger")
+            return redirect(url_for("loginScreen"))
+
+        decryptedToken = validateToken(
+            secretToken.split(",")[0],
+            secretToken.split(",")[1],
+            secretToken.split(",")[2],
+        )
+
+        if decryptedToken == -2:
+            flash("Session Expired", "danger")
+            return redirect(url_for("loginScreen"))
+        elif decryptedToken == -1:
+            flash("Session Expired", "danger")
+            return redirect(url_for("loginScreen"))
+
+        db_connection = sqlite3.connect("./schema/app_data.db")
+        db_cursor = db_connection.cursor()
+
+        # Get playlist data
+        db_cursor.execute(
+            f"SELECT * FROM playlistData WHERE playlistId = ?", (playlistId,)
+        )
+        playlistData = db_cursor.fetchone()
+
+        if playlistData is None:
+            flash("Playlist not found", "danger")
+            return redirect(url_for("playlistScreen"))
+
+        playlistId = playlistData[0]
+        playlistName = playlistData[1]
+        playlistDescription = playlistData[2]
+        playListUserId = playlistData[3]
+        isPublic = playlistData[4]
+
+        # Get all songs in the playlist
+        db_cursor.execute(
+            f"SELECT songData.songId, songData.songName, genreData.genreName, songData.songLyrics, songData.audioFileExt, songData.imageFileExt, songData.isActive, languageData.languageName FROM songData JOIN genreData ON songData.songGenreId = genreData.genreId JOIN languageData ON songData.songLanguageId = languageData.languageId WHERE songId IN (SELECT songId FROM playlistSongs WHERE playlistId = ?)",
+            (playlistId,),
+        )
+
+        songList = db_cursor.fetchall()
+
+        db_connection.close()
+
+        if songList is None:
+            songList = []
+
+        notUserPlaylist = (playListUserId != userId)
+
+        return render_template(
+            "user/playlist_details.html",
+            playlistId=playlistId,
+            playlistName=playlistName,
+            playlistDescription=playlistDescription,
+            isPublic=isPublic,
+            songList=songList,
+            notUserPlaylist=notUserPlaylist,
+        )
+
+    except Exception as e:
+        f = open("logs/errorLogs.txt", "a")
+        f.write(f"[ERROR] {datetime.now()}: {e}\n")
+        f.close()
+        flash("Something Went Wrong.\nPlease try again later.", "danger")
+        return redirect(url_for("loginScreen"))
+
+
+@app.route("/playlist/<playlistId>/addSong", methods=["GET"])
+def addSongToPlaylist(playlistId):
+    # Show all songs that are not in any playlist
+    if request.method == "GET":
+        try:
+            secretToken = session["secretToken"]
+            userId = session["userId"]
+            userName = session["userName"]
+            userEmail = session["userEmail"]
+            userRoleId = session["userRoleId"]
+
+            if userRoleId != 1:
+                flash("Unauthorized Access", "danger")
+                return redirect(url_for("loginScreen"))
+
+            if (
+                len(str(secretToken)) == 0
+                or len(str(userId)) == 0
+                or len(str(userName)) == 0
+                or len(str(userEmail)) == 0
+                or len(str(userRoleId)) == 0
+            ):
+                flash("Session Expired", "danger")
+                return redirect(url_for("loginScreen"))
+
+            decryptedToken = validateToken(
+                secretToken.split(",")[0],
+                secretToken.split(",")[1],
+                secretToken.split(",")[2],
+            )
+
+            if decryptedToken == -2:
+                flash("Session Expired", "danger")
+                return redirect(url_for("loginScreen"))
+
+            db_connection = sqlite3.connect("./schema/app_data.db")
+            db_cursor = db_connection.cursor()
+
+            # Get playlist data
+            db_cursor.execute(
+                f"SELECT * FROM playlistData WHERE playlistId = ?", (playlistId,)
+            )
+            playlistData = db_cursor.fetchone()
+
+            if playlistData is None:
+                flash("Playlist not found", "danger")
+                return redirect(url_for("playlistScreen"))
+
+            playlistName = playlistData[1]
+            playlistDescription = playlistData[2]
+            userId = playlistData[3]
+            isPublic = playlistData[4]
+
+            # Get all songs that are not in any playlist of the creator
+            db_cursor.execute(
+                f"SELECT songData.songId, songData.songName, genreData.genreName, songData.songLyrics, songData.audioFileExt, songData.imageFileExt, songData.isActive, languageData.languageName FROM songData JOIN genreData ON songData.songGenreId = genreData.genreId JOIN languageData ON songData.songLanguageId = languageData.languageId WHERE songId NOT IN (SELECT songId FROM playlistSongs WHERE playlistId = ?)",
+                (playlistId,),
+            )
+            songList = db_cursor.fetchall()
+
+            db_connection.close()
+
+            if songList is None:
+                songList = []
+
+            return render_template(
+                "user/add_song_to_playlist.html",
+                songList=songList,
+                playlistId=playlistId,
+                playlistName=playlistName,
+                playlistDescription=playlistDescription,
+                isPublic=isPublic,
+            )
+
+        except Exception as e:
+            f = open("logs/errorLogs.txt", "a")
+            f.write(f"[ERROR] {datetime.now()}: {e}\n")
+            f.close()
+
+            flash("Something Went Wrong.\nPlease try again later.", "danger")
+            return redirect(url_for("loginScreen"))
+
+
+@app.route("/playlist/<playlistId>/song/<songId>/unlink", methods=["POST"])
+def unlinkSongFromPlaylist(playlistId, songId):
+    if request.method == "POST":
+        try:
+            secretToken = session["secretToken"]
+            userId = session["userId"]
+            userName = session["userName"]
+            userEmail = session["userEmail"]
+            userRoleId = session["userRoleId"]
+
+            if userRoleId != 1:
+                flash("Unauthorized Access", "danger")
+                return redirect(url_for("loginScreen"))
+
+            if (
+                len(str(secretToken)) == 0
+                or len(str(userId)) == 0
+                or len(str(userName)) == 0
+                or len(str(userEmail)) == 0
+                or len(str(userRoleId)) == 0
+            ):
+                flash("Session Expired", "danger")
+                return redirect(url_for("loginScreen"))
+
+            decryptedToken = validateToken(
+                secretToken.split(",")[0],
+                secretToken.split(",")[1],
+                secretToken.split(",")[2],
+            )
+
+            if decryptedToken == -2:
+                flash("Session Expired", "danger")
+                return redirect(url_for("loginScreen"))
+            elif decryptedToken == -1:
+                flash("Session Expired", "danger")
+                return redirect(url_for("loginScreen"))
+
+            db_connection = sqlite3.connect("./schema/app_data.db")
+            db_cursor = db_connection.cursor()
+
+            # Get playlist data
+            db_cursor.execute(
+                f"SELECT * FROM playlistData WHERE playlistId = ?", (playlistId,)
+            )
+            playlistData = db_cursor.fetchone()
+
+            if playlistData is None:
+                flash("Playlist not found", "danger")
+                return redirect(url_for("playlistScreen"))
+
+            # Get song data
+            db_cursor.execute(f"SELECT * FROM songData WHERE songId = ?", (songId,))
+            songData = db_cursor.fetchone()
+
+            if songData is None:
+                flash("Song not found", "danger")
+                return redirect(url_for("playlistScreen"))
+
+            # Check if song is already linked to playlist
+            db_cursor.execute(
+                f"SELECT * FROM playlistSongs WHERE playlistId = ? AND songId = ?",
+                (playlistId, songId),
+            )
+
+            playlistSongData = db_cursor.fetchone()
+
+            if playlistSongData is None:
+                flash("Song not linked to playlist", "danger")
+                return redirect(url_for("playlistScreen"))
+
+            db_cursor.execute(
+                f"DELETE FROM playlistSongs WHERE playlistId = ? AND songId = ?",
+                (playlistId, songId),
+            )
+
+            affectedRows = db_cursor.rowcount
+
+            if affectedRows == 0:
+                flash("Something went wrong", "danger")
+                return redirect(url_for("playlistScreen"))
+
+            db_connection.commit()
+
+            db_connection.close()
+
+            return redirect(url_for("playlistScreen"))
+
+        except Exception as e:
+            print(e)
+            f = open("logs/errorLogs.txt", "a")
+            f.write(f"[ERROR] {datetime.now()}: {e}\n")
+            f.close()
+
+            flash("Something Went Wrong.\nPlease try again later.", "danger")
+            return redirect(url_for("loginScreen"))
+
+
+@app.route("/playlist/<playlistId>/song/<songId>/link", methods=["POST"])
+def linkSongToPlaylist(playlistId, songId):
+    if request.method == "POST":
+        try:
+            secretToken = session["secretToken"]
+            userId = session["userId"]
+            userName = session["userName"]
+            userEmail = session["userEmail"]
+            userRoleId = session["userRoleId"]
+
+            if userRoleId != 1:
+                flash("Unauthorized Access", "danger")
+                return redirect(url_for("loginScreen"))
+
+            if (
+                len(str(secretToken)) == 0
+                or len(str(userId)) == 0
+                or len(str(userName)) == 0
+                or len(str(userEmail)) == 0
+                or len(str(userRoleId)) == 0
+            ):
+                flash("Session Expired", "danger")
+                return redirect(url_for("loginScreen"))
+
+            decryptedToken = validateToken(
+                secretToken.split(",")[0],
+                secretToken.split(",")[1],
+                secretToken.split(",")[2],
+            )
+
+            if decryptedToken == -2:
+                flash("Session Expired", "danger")
+                return redirect(url_for("loginScreen"))
+            elif decryptedToken == -1:
+                flash("Session Expired", "danger")
+                return redirect(url_for("loginScreen"))
+
+            db_connection = sqlite3.connect("./schema/app_data.db")
+            db_cursor = db_connection.cursor()
+
+            # Get playlist data
+            db_cursor.execute(
+                f"SELECT * FROM playlistData WHERE playlistId = ?", (playlistId,)
+            )
+            playlistData = db_cursor.fetchone()
+
+            if playlistData is None:
+                flash("Playlist not found", "danger")
+                return redirect(url_for("playlistScreen"))
+
+            # Get song data
+            db_cursor.execute(f"SELECT * FROM songData WHERE songId = ?", (songId,))
+            songData = db_cursor.fetchone()
+
+            if songData is None:
+                flash("Song not found", "danger")
+                return redirect(url_for("playlistScreen"))
+
+            # Check if song is already linked to playlist
+            db_cursor.execute(
+                f"SELECT * FROM playlistSongs WHERE playlistId = ? AND songId = ?",
+                (playlistId, songId),
+            )
+
+            playlistSongData = db_cursor.fetchone()
+
+            if playlistSongData is not None:
+                flash("Song already linked to playlist", "danger")
+                return redirect(url_for("playlistScreen"))
+
+            db_cursor.execute(
+                f"INSERT INTO playlistSongs (playlistId, songId) VALUES (?, ?)",
+                (playlistId, songId),
+            )
+
+            affectedRows = db_cursor.rowcount
+            if affectedRows == 0:
+                flash("Something went wrong", "danger")
+                return redirect(url_for("playlistScreen"))
+
+            db_connection.commit()
+            db_connection.close()
+
+            return redirect(url_for("playlistScreen"))
+
+        except Exception as e:
+            print(e)
+            f = open("logs/errorLogs.txt", "a")
+            f.write(f"[ERROR] {datetime.now()}: {e}\n")
+            f.close()
+
+            flash("Something Went Wrong.\nPlease try again later.", "danger")
+            return redirect(url_for("loginScreen"))
+
+
+@app.route("/playlist/new", methods=["GET", "POST"])
+def newPlaylist():
+    if request.method == "GET":
+        try:
+            secretToken = session["secretToken"]
+            userId = session["userId"]
+            userName = session["userName"]
+            userEmail = session["userEmail"]
+            userRoleId = session["userRoleId"]
+
+            if userRoleId != 1:
+                flash("Unauthorized Access", "danger")
+                return redirect(url_for("loginScreen"))
+
+            if (
+                len(str(secretToken)) == 0
+                or len(str(userId)) == 0
+                or len(str(userName)) == 0
+                or len(str(userEmail)) == 0
+                or len(str(userRoleId)) == 0
+            ):
+                flash("Session Expired", "danger")
+                return redirect(url_for("loginScreen"))
+
+            decryptedToken = validateToken(
+                secretToken.split(",")[0],
+                secretToken.split(",")[1],
+                secretToken.split(",")[2],
+            )
+
+            if decryptedToken == -2:
+                flash("Session Expired", "danger")
+                return redirect(url_for("loginScreen"))
+            elif decryptedToken == -1:
+                flash("Session Expired", "danger")
+                return redirect(url_for("loginScreen"))
+
+            return render_template("user/new_playlist.html")
+
+        except Exception as e:
+            print(e)
+            f = open("logs/errorLogs.txt", "a")
+            f.write(f"[ERROR] {datetime.now()}: {e}\n")
+            f.close()
+
+            flash("Something Went Wrong.\nPlease try again later.", "danger")
+            return redirect(url_for("loginScreen"))
+
+    elif request.method == "POST":
+        try:
+            secretToken = session["secretToken"]
+            userId = session["userId"]
+            userName = session["userName"]
+            userEmail = session["userEmail"]
+            userRoleId = session["userRoleId"]
+
+            if userRoleId != 1:
+                flash("Unauthorized Access", "danger")
+                return redirect(url_for("loginScreen"))
+
+            if (
+                len(str(secretToken)) == 0
+                or len(str(userId)) == 0
+                or len(str(userName)) == 0
+                or len(str(userEmail)) == 0
+                or len(str(userRoleId)) == 0
+            ):
+                flash("Session Expired", "danger")
+                return redirect(url_for("loginScreen"))
+
+            playlistName = request.form.get("playlistName")
+            playlistDescription = request.form.get("playlistDescription")
+            isPublic = request.form.get("isPublic")
+
+            if (
+                len(str(playlistName)) == 0
+                or len(str(playlistDescription)) == 0
+                or len(str(isPublic)) == 0
+            ):
+                flash("Please fill all the fields", "danger")
+                return redirect(url_for("newPlaylist"))
+
+            db_connection = sqlite3.connect("./schema/app_data.db")
+            db_cursor = db_connection.cursor()
+
+            db_cursor.execute(
+                f"INSERT INTO playlistData (playlistName, playlistDescription, userId, isPublic) VALUES (?, ?, ?, ?)",
+                (playlistName, playlistDescription, userId, isPublic),
+            )
+            affectedRows = db_cursor.rowcount
+
+            if affectedRows == 0:
+                flash("Something went wrong", "danger")
+                return redirect(url_for("newPlaylist"))
+
+            playlistId = db_cursor.lastrowid
+
+            db_connection.commit()
+            db_connection.close()
+
+            return redirect(url_for("userDashboardScreen"))
+
+        except Exception as e:
+            print(e)
+            f = open("logs/errorLogs.txt", "a")
+            f.write(f"[ERROR] {datetime.now()}: {e}\n")
+            f.close()
+
+            flash("Something Went Wrong.\nPlease try again later.", "danger")
+            return redirect(url_for("loginScreen"))
+
+@app.route("/playlist/<playlistId>/edit", methods=["GET", "POST"])
+def editPlaylist(playlistId):
+    if request.method == "GET":
+        try:
+            secretToken = session["secretToken"]
+            userId = session["userId"]
+            userName = session["userName"]
+            userEmail = session["userEmail"]
+            userRoleId = session["userRoleId"]
+
+            if userRoleId != 1:
+                flash("Unauthorized Access", "danger")
+                return redirect(url_for("loginScreen"))
+
+            if (
+                len(str(secretToken)) == 0
+                or len(str(userId)) == 0
+                or len(str(userName)) == 0
+                or len(str(userEmail)) == 0
+                or len(str(userRoleId)) == 0
+            ):
+                flash("Session Expired", "danger")
+                return redirect(url_for("loginScreen"))
+
+            decryptedToken = validateToken(
+                secretToken.split(",")[0],
+                secretToken.split(",")[1],
+                secretToken.split(",")[2],
+            )
+
+            if decryptedToken == -2:
+                flash("Session Expired", "danger")
+                return redirect(url_for("loginScreen"))
+            elif decryptedToken == -1:
+                flash("Session Expired", "danger")
+                return redirect(url_for("loginScreen"))
+            
+            db_connection = sqlite3.connect("./schema/app_data.db")
+            db_cursor = db_connection.cursor()
+
+            # Get playlist data
+            db_cursor.execute(
+                f"SELECT * FROM playlistData WHERE playlistId = ? AND userId = ?", (playlistId,userId)
+            )
+            playlistData = db_cursor.fetchone()
+
+            if playlistData is None:
+                flash("Playlist not found", "danger")
+                return redirect(url_for("playlistScreen"))
+            
+            playlistName = playlistData[1]
+            playlistDescription = playlistData[2]
+            isPublic = playlistData[4]
+
+
+            db_connection.close()
+            
+            return render_template("user/edit_playlist.html", playlistId=playlistId, playlistName=playlistName, playlistDescription=playlistDescription, isPublic=isPublic)
+        
+        except Exception as e:
+            print(e)
+            f = open("logs/errorLogs.txt", "a")
+            f.write(f"[ERROR] {datetime.now()}: {e}\n")
+            f.close()
+
+            flash("Something Went Wrong.\nPlease try again later.", "danger")
+            return redirect(url_for("loginScreen"))
+        
+    elif request.method == "POST":
+        try:
+            secretToken = session["secretToken"]
+            userId = session["userId"]
+            userName = session["userName"]
+            userEmail = session["userEmail"]
+            userRoleId = session["userRoleId"]
+
+            if userRoleId != 1:
+                flash("Unauthorized Access", "danger")
+                return redirect(url_for("loginScreen"))
+
+            if (
+                len(str(secretToken)) == 0
+                or len(str(userId)) == 0
+                or len(str(userName)) == 0
+                or len(str(userEmail)) == 0
+                or len(str(userRoleId)) == 0
+            ):
+                flash("Session Expired", "danger")
+                return redirect(url_for("loginScreen"))
+            
+            playlistName = request.form.get("playlistName")
+            playlistDescription = request.form.get("playlistDescription")
+            isPublic = request.form.get("isPublic")
+
+            if (
+                len(str(playlistName)) == 0
+                or len(str(playlistDescription)) == 0
+                or len(str(isPublic)) == 0
+            ):
+                flash("Please fill all the fields", "danger")
+                return redirect(url_for("editPlaylist", playlistId=playlistId))
+
+            db_connection = sqlite3.connect("./schema/app_data.db")
+            db_cursor = db_connection.cursor()
+
+            db_cursor.execute('SELECT * FROM playlistData WHERE playlistId = ? AND userId = ?', (playlistId, userId))
+            playlistData = db_cursor.fetchone()
+
+            if playlistData is None:
+                flash("Playlist not found", "danger")
+                return redirect(url_for("playlistScreen"))
+            
+            oldName = playlistData[1]
+
+            if oldName != playlistName:
+                db_cursor.execute('SELECT * FROM playlistData WHERE playlistName = ? AND userId = ?', (playlistName, userId))
+                playlistData = db_cursor.fetchone()
+
+                if playlistData is not None:
+                    flash("Playlist name already exists", "danger")
+                    return redirect(url_for("editPlaylist", playlistId=playlistId))
+
+            db_cursor.execute(
+                f"UPDATE playlistData SET playlistName = ?, playlistDescription = ?, isPublic = ? WHERE playlistId = ?",
+                (playlistName, playlistDescription, isPublic, playlistId),
+            )
+            affectedRows = db_cursor.rowcount
+
+            if affectedRows == 0:
+                flash("Something went wrong", "danger")
+                return redirect(url_for("editPlaylist", playlistId=playlistId))
+
+            db_connection.commit()
+            db_connection.close()
+
+            return redirect(url_for("playlistScreen"))
+        
         except Exception as e:
             print(e)
             f = open("logs/errorLogs.txt", "a")
