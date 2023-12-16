@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash
+from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 from schema.init_script import reinitializeDatabase, initEnvironment
 
 from middleware.keyGen import generateKey
@@ -3644,7 +3644,202 @@ def editPlaylist(playlistId):
 
             flash("Something Went Wrong.\nPlease try again later.", "danger")
             return redirect(url_for("loginScreen"))
+        
 
+# API for songs, playlists CRUD
+        
+@app.route("/api/login", methods=["POST"])
+def apiLogin():
+    try:
+        # JSON Data
+        jsonData = request.json
+
+        userEmail = jsonData["userEmail"]
+        userPassword = jsonData["userPassword"]
+
+        if userEmail is None or userPassword is None:
+            return jsonify({"status": "error", "message": "Please fill all the fields"})
+
+        if (
+            len(str(userEmail)) == 0
+            or len(str(userPassword)) == 0
+        ):
+            return jsonify({"status": "error", "message": "Please fill all the fields"})
+
+        db_connection = sqlite3.connect("./schema/app_data.db")
+        db_cursor = db_connection.cursor()
+
+        db_cursor.execute(
+            f"SELECT * FROM userData WHERE userEmail = ? AND userPassword = ?",
+            (userEmail, userPassword),
+        )
+        userData = db_cursor.fetchone()
+
+        if userData is None:
+            return jsonify({"status": "error", "message": "Invalid Credentials"})
+
+        userId = userData[0]
+        userName = userData[1]
+        userEmail = userData[2]
+        userRoleId = userData[4]
+
+        # Generate Token
+        secretToken = generateToken({
+            "userId": userId,
+            "userName": userName,
+            "userEmail": userEmail,
+            "userRoleId": userRoleId,
+        })
+
+        db_connection.close()
+
+        return jsonify(
+            {
+                "status": "success",
+                "message": "Login Successful",
+                "secretToken": secretToken,
+                "userId": userId,
+                "userName": userName,
+                "userEmail": userEmail,
+                "userRoleId": userRoleId,
+            }
+        )
+
+    except Exception as e:
+        print(e)
+        return jsonify({"status": "error", "message": "Something Went Wrong"})
+
+@app.route("/api/song", methods=["GET"])
+def apiGetAllSongs():
+    try:
+        header = request.headers.get("Authorization")
+        if header is None:
+            return jsonify({"status": "error", "message": "Session Expired"})
+        
+        secretToken = header.split(" ")[1]
+
+        if len(str(secretToken)) == 0 or secretToken is None:
+            return jsonify({"status": "error", "message": "Session Expired"})
+
+        decryptedToken = validateToken(
+            secretToken.split(",")[0],
+            secretToken.split(",")[1],
+            secretToken.split(",")[2],
+        )
+
+        userId = decryptedToken["userId"]
+
+        if decryptedToken == -2:
+            return jsonify({"status": "error", "message": "Session Expired"})
+        elif decryptedToken == -1:
+            return jsonify({"status": "error", "message": "Session Expired"})
+
+        db_connection = sqlite3.connect("./schema/app_data.db")
+        db_cursor = db_connection.cursor()
+
+        # Check if user Exists and check role
+        db_cursor.execute(
+            f"SELECT userRoleId FROM userData WHERE userId = ?", (userId,)
+        )
+
+        userData = db_cursor.fetchone()
+
+        if userData is None:
+            return jsonify({"status": "error", "message": "Invalid Credentials"})
+        
+        userRoleId = userData[0]
+
+        if userRoleId != 1 and userRoleId != 0 and userRoleId != 2:
+            return jsonify({"status": "error", "message": "Unauthorized Access"})
+        
+        # Get all songs
+        db_cursor.execute(
+            f"SELECT * FROM songData JOIN genreData ON songData.songGenreId = genreData.genreId JOIN languageData ON songData.songLanguageId = languageData.languageId"
+        )
+
+        # dict of songs
+        songList = [dict(zip([key[0] for key in db_cursor.description], song)) for song in songList]
+        db_connection.close()
+
+        return jsonify(
+            {
+                "status": "success",
+                "message": "Songs Fetched",
+                "songList": songList,
+            }
+        )
+
+    except Exception as e:
+        print(e)
+        return jsonify({"status": "error", "message": "Something Went Wrong"})
+    
+@app.route("/api/song/<songId>", methods=["GET"])
+def apiGetSong(songId):
+    try:
+        header = request.headers.get("Authorization")
+        if header is None:
+            return jsonify({"status": "error", "message": "Session Expired"})
+        
+        secretToken = header.split(" ")[1]
+
+        if len(str(secretToken)) == 0 or secretToken is None:
+            return jsonify({"status": "error", "message": "Session Expired"})
+
+        decryptedToken = validateToken(
+            secretToken.split(",")[0],
+            secretToken.split(",")[1],
+            secretToken.split(",")[2],
+        )
+
+        userId = decryptedToken["userId"]
+
+        if decryptedToken == -2:
+            return jsonify({"status": "error", "message": "Session Expired"})
+        elif decryptedToken == -1:
+            return jsonify({"status": "error", "message": "Session Expired"})
+
+        db_connection = sqlite3.connect("./schema/app_data.db")
+        db_cursor = db_connection.cursor()
+
+        # Check if user Exists and check role
+        db_cursor.execute(
+            f"SELECT userRoleId FROM userData WHERE userId = ?", (userId,)
+        )
+
+        userData = db_cursor.fetchone()
+
+        if userData is None:
+            return jsonify({"status": "error", "message": "Invalid Credentials"})
+        
+        userRoleId = userData[0]
+
+        if userRoleId != 1 and userRoleId != 0 and userRoleId != 2:
+            return jsonify({"status": "error", "message": "Unauthorized Access"})
+        
+        # Get song
+        db_cursor.execute(
+            f"SELECT * FROM songData JOIN genreData ON songData.songGenreId = genreData.genreId JOIN languageData ON songData.songLanguageId = languageData.languageId WHERE songId = ?", (songId,)
+        )
+
+        songData = db_cursor.fetchone()
+        if songData is None:
+            return jsonify({"status": "error", "message": "Song not found"})
+        
+        songData = dict(zip([key[0] for key in db_cursor.description], songData))
+
+        db_connection.close()
+
+        return jsonify(
+            {
+                "status": "success",
+                "message": "Song Fetched",
+                "songData": songData,
+            }
+        )
+
+    except Exception as e:
+        print(e)
+        return jsonify({"status": "error", "message": "Something Went Wrong"})
 
 if __name__ == "__main__":
     # reinitializeDatabase()
