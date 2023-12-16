@@ -446,7 +446,21 @@ def creatorDashboardScreen():
             f"SELECT s.songId, s.songName, g.genreName, s.songLyrics, s.audioFileExt, s.imageFileExt, s.isActive FROM songData AS s JOIN genreData AS g ON g.genreId = s.songGenreId JOIN languageData AS l ON l.languageId = s.songLanguageId WHERE s.createdBy = ?",
             (userId,),
         )
+
+        # Get Song Count
         songList = db_cursor.fetchall()
+
+        if songList is None:
+            songList = []
+
+        songCount = len(songList)
+        
+        # Album Count
+        db_cursor.execute(
+            f"SELECT COUNT(*) FROM albumData WHERE createdBy = ?", (userId,)
+        )
+        albumCount = db_cursor.fetchone()[0]
+
 
         db_connection.close()
 
@@ -457,10 +471,92 @@ def creatorDashboardScreen():
         flash("Something Went Wrong.\nPlease try again later.", "danger")
         return redirect(url_for("loginScreen"))
 
-    return render_template("creator/creator_dashboard.html", songList=songList)
-
+    return render_template("creator/creator_dashboard.html", songList=songList, songCount=songCount, albumCount=albumCount)
 
 # /song
+
+@app.route("/song", methods=["GET"])
+def songListScreen():
+    try:
+        secretToken = session["secretToken"]
+        userId = session["userId"]
+        userName = session["userName"]
+        userEmail = session["userEmail"]
+        userRoleId = session["userRoleId"]
+        searchQuery = request.args.get("search")
+
+        if searchQuery is None:
+            searchQuery = ""
+
+        if (
+            len(str(secretToken)) == 0
+            or len(str(userId)) == 0
+            or len(str(userName)) == 0
+            or len(str(userEmail)) == 0
+            or len(str(userRoleId)) == 0
+        ):
+            flash("Session Expired", "danger")
+            return redirect(url_for("loginScreen"))
+
+        decryptedToken = validateToken(
+            secretToken.split(",")[0],
+            secretToken.split(",")[1],
+            secretToken.split(",")[2],
+        )
+
+        if decryptedToken == -2:
+            flash("Session Expired", "danger")
+            return redirect(url_for("loginScreen"))
+        elif decryptedToken == -1:
+            flash("Session Expired", "danger")
+            return redirect(url_for("loginScreen"))
+
+        db_connection = sqlite3.connect("./schema/app_data.db")
+        db_cursor = db_connection.cursor()
+
+        if userRoleId == 2:
+            # Get all songs
+            db_cursor.execute(
+                f"SELECT s.songId, s.songName, g.genreName, s.songLyrics, s.audioFileExt, s.imageFileExt, s.isActive FROM songData AS s JOIN genreData AS g ON g.genreId = s.songGenreId JOIN languageData AS l ON l.languageId = s.songLanguageId WHERE s.createdBy = ? AND s.songName LIKE ?", (userId, f"%{searchQuery}%")
+            )
+        else:
+            # Get all songs
+            db_cursor.execute(
+                f"SELECT s.songId, s.songName, g.genreName, s.songLyrics, s.audioFileExt, s.imageFileExt, s.isActive FROM songData AS s JOIN genreData AS g ON g.genreId = s.songGenreId JOIN languageData AS l ON l.languageId = s.songLanguageId WHERE s.songName LIKE ?", (f"%{searchQuery}%",)
+            )
+
+        # Get Song Count
+        songList = db_cursor.fetchall()
+
+        if songList is None:
+            songList = []
+
+        songCount = len(songList)
+
+        db_connection.close()
+
+        if userRoleId == 2:
+            return render_template("creator/song_list.html", songList=songList, songCount=songCount, searchQuery=searchQuery)
+        
+        elif userRoleId == 0:
+            return render_template("admin/song_list.html", songList=songList, songCount=songCount, searchQuery=searchQuery)
+        
+        elif userRoleId == 1:
+            return render_template("user/song_list.html", songList=songList, songCount=songCount, searchQuery=searchQuery)
+        
+        else:
+            flash("Unauthorized Access", "danger")
+            return redirect(url_for("loginScreen"))
+
+    except Exception as e:
+        print(e)
+        f = open("logs/errorLogs.txt", "a")
+        f.write(f"[ERROR] {datetime.now()}: {e}\n")
+        f.close()
+
+        flash("Something Went Wrong.\nPlease try again later.", "danger")
+        return redirect(url_for("loginScreen"))
+
 @app.route("/song/new", methods=["GET", "POST"])
 def addNewSong():
     if request.method == "GET":

@@ -15,38 +15,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.0.0/crypto-js.min.js"></script>
 </head>
 
-<!-- <script>
-    function handlePlayPause(songId) {
-        const playButton = document.querySelector(`#playButton_${songId}`);
-        const songCard = document.querySelector(`#songCard_${songId}`);
-
-        const audioUrl = `/static/music/song/${songId}.mp3`;
-        const audioElement = new Audio(audioUrl);
-
-        const playIcon = playButton.querySelector('.play');
-        const pauseIcon = playButton.querySelector('.pause');
-        const buttonText = playButton.querySelector('.button-text');
-
-        playButton.addEventListener('click', () => {
-            // pause all other songs
-
-            if (audioElement.paused) {
-                audioElement.play();
-                playIcon.classList.toggle('hidden');
-                pauseIcon.classList.toggle('hidden');
-                buttonText.innerHTML = 'Pause';
-                songCard.style.border = '1px solid #e2f8f6d7';
-            } else {
-                audioElement.pause();
-                playIcon.classList.toggle('hidden');
-                pauseIcon.classList.toggle('hidden');
-                buttonText.innerHTML = 'Play';
-                songCard.style.border = '1px solid rgba(41, 42, 45, 0.4)';
-            }
-        });
-    }
-</script> -->
-
 <body>
     <script type="text/javascript">
         let audioElements = {};
@@ -151,7 +119,6 @@
         }
 
         document.addEventListener('keydown', (event) => {
-            event.preventDefault();
             if (event.code == 'Space') {
                 flag = true;
                 for (const key in audioElements) {
@@ -183,6 +150,7 @@
                         <li><a href="/">Profile</a></li>
                         <li><a href="/album">My Albums</a></li>
                         <li><a href="/genre">Manage Genres</a></li>
+                        <li><a href="/creator/dashboard">Dashboard</a></li>
                         <li><a href="/auth/logout">Logout</a></li>
                     </span>
                     <span class="logo menu-trigger hidden">
@@ -193,46 +161,14 @@
         </header>
 
         <div class="content">
-            <h1 style="margin-top: 0; margin-bottom: 2px">Welcome, {{session['userName']}}</h1>
-            <div class="chip">
-                Creator
-            </div>
-
-            <div class="row">
-                <div class="bigButton">
-                    <a href="/song/new">
-                        <i class="material-icons">add_circle</i>
-                        <span class="button-text">New Song</span>
-                    </a>
-                </div>
-                <div class="bigButton">
-                    <a href="/album/new">
-                        <i class="material-icons">add_circle</i>
-                        <span class="button-text">New Album</span>
-                    </a>
-                </div>
-            </div>
-
-            <div class="row">
-                <div class="bigButton2">
-                    <a href="/song">
-                        <div style="padding: 16px;">
-                            <i class="material-icons">library_music</i>
-                        </div>
-                        <div class="count">{{songCount}} songs</div>
-                    </a>
-                </div>
-                <div class="bigButton2">
-                    <a href="/album">
-                        <div style="padding: 16px;">
-                            <i class="material-icons">album</i>
-                        </div>
-                        <div class="count">{{albumCount}} albums</div>
-                    </a>
-                </div>
-            </div>
 
             <h2>My Songs</h2>
+
+            <form action="/song" method="GET">
+                <div class="searchBar">
+                    <input type="text" name="search" value="{{searchQuery}}" id="search" placeholder="Search Songs" style="width: 540px;" />
+                </div>
+            </form>
 
             <!-- Song Cards -->
             {% if songList | length == 0 %}
