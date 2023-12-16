@@ -772,3 +772,9 @@ input[type="file"]::-webkit-file-upload-button:hover {
   margin: auto;
   text-align: center;
 }
+
+/* Customize audio controls */
+audio {
+  width: 100%;
+  outline: none;
+}

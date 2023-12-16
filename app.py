@@ -6,6 +6,8 @@ from middleware.tokenGenerator import generateToken
 from middleware.tokenValidator import validateToken
 import sqlite3
 
+import os
+
 from datetime import datetime
 
 # from PIL import Image
@@ -372,7 +374,7 @@ def creatorDashboardScreen():
         db_cursor = db_connection.cursor()
 
         # Get all songs
-        db_cursor.execute(f"SELECT s.songId, s.songName, g.genreName, s.songLyrics FROM songData AS s JOIN genreData AS g ON g.genreId = s.songGenreId JOIN languageData AS l ON l.languageId = s.songLanguageId WHERE s.createdBy = ?", (userId,))
+        db_cursor.execute(f"SELECT s.songId, s.songName, g.genreName, s.songLyrics, s.audioFileExt, s.imageFileExt, s.isActive FROM songData AS s JOIN genreData AS g ON g.genreId = s.songGenreId JOIN languageData AS l ON l.languageId = s.songLanguageId WHERE s.createdBy = ?", (userId,))
         songList = db_cursor.fetchall()
 
         db_connection.close()
@@ -387,6 +389,8 @@ def creatorDashboardScreen():
     
     return render_template('creator/creator_dashboard.html', songList=songList)
 
+
+# /song
 @app.route('/song/new', methods=['GET', 'POST'])
 def addNewSong():
     if request.method == 'GET':
@@ -512,7 +516,7 @@ def addNewSong():
             
             # TODO: SongDuration
             # Insert song data
-            db_cursor.execute(f"INSERT INTO songData (songName, songDescription, songLyrics, songReleaseDate, songGenreId, songLanguageId, isActive, createdBy) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", (songName, songDescription, songLyrics, songReleaseDate, songGenre, songLanguage, "1", userId))
+            db_cursor.execute(f"INSERT INTO songData (songName, songDescription, songLyrics, songReleaseDate, songGenreId, songLanguageId, isActive, createdBy, audioFileExt, imageFileExt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", (songName, songDescription, songLyrics, songReleaseDate, songGenre, songLanguage, "1", userId, songAudio.filename.split('.')[-1], songCover.filename.split('.')[-1]))
 
             affectedRows = db_cursor.rowcount
             songId = db_cursor.lastrowid
@@ -530,9 +534,289 @@ def addNewSong():
             db_connection.commit()
             db_connection.close()
 
-            return redirect(url_for('creatorDashboardScreen'))
+            if userRoleId == 2:
+                return redirect(url_for('creatorDashboardScreen'))
+            elif userRoleId == 0:
+                return redirect(url_for('adminDashboard'))
         
         except Exception as e:
+            f = open("logs/errorLogs.txt", "a")
+            f.write(f"[ERROR] {datetime.now()}: {e}\n")
+            f.close()
+            flash('Something Went Wrong.\nPlease try again later.', 'danger')
+            return redirect(url_for('loginScreen'))
+        
+
+@app.route('/song/<songId>/edit', methods=['GET', 'POST'])
+def editSong(songId):
+    if request.method == "GET":
+        try:
+            secretToken = session['secretToken']
+            userId = session['userId']
+            userName = session['userName']
+            userEmail = session['userEmail']
+            userRoleId = session['userRoleId']
+
+            if userRoleId != 2 and userRoleId != 0:
+                flash('Unauthorized Access', 'danger')
+                return redirect(url_for('loginScreen'))
+            
+            if len(str(secretToken)) == 0 or len(str(userId)) == 0 or len(str(userName)) == 0 or len(str(userEmail)) == 0 or len(str(userRoleId)) == 0:
+                flash('Session Expired', 'danger')
+                return redirect(url_for('loginScreen'))
+            
+            decryptedToken = validateToken(secretToken.split(',')[0], secretToken.split(',')[1], secretToken.split(',')[2])
+
+            if decryptedToken == -2:
+                flash('Session Expired', 'danger')
+                return redirect(url_for('loginScreen'))
+            
+            db_connection = sqlite3.connect('./schema/app_data.db')
+            db_cursor = db_connection.cursor()
+
+            # Get song data
+            db_cursor.execute(f"SELECT * FROM songData WHERE songId = ?", (songId,))
+            songData = db_cursor.fetchone()
+
+            if songData is None:
+                flash('Song not found', 'danger')
+                if userRoleId == 2:
+                    return redirect(url_for('creatorDashboardScreen'))
+                elif userRoleId == 0:
+                    return redirect(url_for('adminDashboard'))
+            
+            songId = songData[0]
+            songName = songData[1]
+            songDescription = songData[2]
+            songLyrics = songData[4]
+            songReleaseDate = songData[6]
+            songGenre = songData[7]
+            songLanguage = songData[9]
+            createdBy = songData[12]
+            songAudioExt = songData[16]
+            songCoverExt = songData[17]
+        
+            # Check if user is creator of the song
+            if createdBy != userId and userRoleId != 0 and userRoleId == 2:
+                flash('Unauthorized Access', 'danger')
+                if userRoleId == 2:
+                    return redirect(url_for('creatorDashboardScreen'))
+                elif userRoleId == 0:
+                    return redirect(url_for('adminDashboard'))
+            
+            # Get all genres
+            db_cursor.execute(f"SELECT * FROM genreData")
+            genreList = db_cursor.fetchall()
+
+            db_cursor.execute(f"SELECT * FROM languageData")
+            languageList = db_cursor.fetchall()
+
+            db_connection.close()
+
+            if genreList is None:
+                flash('No Genres found to add new songs! Add new Genres to continue', 'danger')
+                return redirect(url_for('addNewGenre'))
+            
+            if userRoleId == 2:
+                return render_template('creator/edit_song.html', songId=songId, songName=songName, songDescription=songDescription, songLyrics=songLyrics, songReleaseDate=songReleaseDate, songGenre=songGenre, songLanguage=songLanguage, genreList=genreList, languageList=languageList, songAudioExt=songAudioExt, songCoverExt=songCoverExt)
+            elif userRoleId == 0:
+                return render_template('admin/edit_song.html', songId=songId, songName=songName, songDescription=songDescription, songLyrics=songLyrics, songReleaseDate=songReleaseDate, songGenre=songGenre, songLanguage=songLanguage, genreList=genreList, languageList=languageList, songAudioExt=songAudioExt, songCoverExt=songCoverExt)
+            
+        except Exception as e:
+            f = open("logs/errorLogs.txt", "a")
+            f.write(f"[ERROR] {datetime.now()}: {e}\n")
+            f.close()
+            flash('Something Went Wrong.\nPlease try again later.', 'danger')
+            return redirect(url_for('loginScreen'))
+        
+    # POST
+    elif request.method == "POST":
+        try:
+            secretToken = session['secretToken']
+            userId = session['userId']
+            userName = session['userName']
+            userEmail = session['userEmail']
+            userRoleId = session['userRoleId']
+
+            if userRoleId != 2 and userRoleId != 0:
+                flash('Unauthorized Access', 'danger')
+                return redirect(url_for('loginScreen'))
+            
+            if len(str(secretToken)) == 0 or len(str(userId)) == 0 or len(str(userName)) == 0 or len(str(userEmail)) == 0 or len(str(userRoleId)) == 0:
+                flash('Session Expired', 'danger')
+                return redirect(url_for('loginScreen'))
+            
+            decryptedToken = validateToken(secretToken.split(',')[0], secretToken.split(',')[1], secretToken.split(',')[2])
+
+            if decryptedToken == -2:
+                flash('Session Expired', 'danger')
+                return redirect(url_for('loginScreen'))
+            
+            songName = request.form.get('songName')
+            songDescription = request.form.get('songDescription')
+            songGenre = request.form.get('songGenre')
+            songLanguage = request.form.get('songLanguage')
+            songLyrics = request.form.get('songLyrics')
+            songReleaseDate = request.form.get('songReleaseDate')
+            songAudio = request.files['songAudio']
+            songCover = request.files['songCover']
+
+
+            db_connection = sqlite3.connect('./schema/app_data.db')
+            db_cursor = db_connection.cursor()
+
+            # Get song data
+            db_cursor.execute(f"SELECT * FROM songData WHERE songId = ?", (songId,))
+            songData = db_cursor.fetchone()
+
+            if songData is None:
+                flash('Song not found', 'danger')
+                if userRoleId == 2:
+                    return redirect(url_for('creatorDashboardScreen'))
+                elif userRoleId == 0:
+                    return redirect(url_for('adminDashboard'))
+            
+            songId = songData[0]
+            originalSongName = songData[1]
+            songDescription = songData[2]
+            songLyrics = songData[4]
+            songReleaseDate = songData[6]
+            songGenre = songData[7]
+            songLanguage = songData[9]
+            createdBy = songData[12]
+            songAudioExt = songData[16]
+            songCoverExt = songData[17]
+        
+            # Check if user is creator of the song
+            if createdBy != userId and userRoleId != 0 and userRoleId == 2:
+                flash('Unauthorized Access', 'danger')
+                if userRoleId == 2:
+                    return redirect(url_for('creatorDashboardScreen'))
+                elif userRoleId == 0:
+                    return redirect(url_for('adminDashboard'))
+            
+
+            # INSERT DATA AND IF SUCCESSFUL, UPLOAD FILES
+            if len(str(songName)) == 0 or len(str(songDescription)) == 0 or len(str(songGenre)) == 0 or len(str(songLanguage)) == 0 or len(str(songLyrics)) == 0 or len(str(songReleaseDate)) == 0:
+                flash('Please fill all the fields', 'danger')
+                return redirect(url_for('addNewSong'))
+
+            if originalSongName != songName:
+                # Check if song already exists
+                db_cursor.execute(f"SELECT * FROM songData WHERE songName = ?", (songName,))
+                songData = db_cursor.fetchone()
+
+                if songData is not None:
+                    flash('Song already exists', 'danger')
+                    return redirect(url_for('addNewSong'))
+                
+            db_cursor.execute(f"UPDATE songData SET songName = ?, songDescription = ?, songLyrics = ?, songReleaseDate = ?, songGenreId = ?, songLanguageId = ? WHERE songId = ?", (songName, songDescription, songLyrics, songReleaseDate, songGenre, songLanguage, songId))
+
+            affectedRows = db_cursor.rowcount
+            if affectedRows == 0:
+                flash('Something went wrong', 'danger')
+                return redirect(url_for('addNewSong'))
+            
+            # Upload song audio
+            if songAudio.filename != '':
+                db_cursor.execute(f"UPDATE songData SET audioFileExt = ? WHERE songId = ?", (songAudio.filename.split('.')[-1], songId))
+                # Remove old file
+                os.remove(f"static/music/song/{songId}.{songAudioExt}")
+                # Upload new file
+                songAudio.save(f"static/music/song/{songId}.{songAudio.filename.split('.')[-1]}")
+            
+            # Upload song cover
+            if songCover.filename != '':
+                db_cursor.execute(f"UPDATE songData SET imageFileExt = ? WHERE songId = ?", (songCover.filename.split('.')[-1], songId))
+                # Remove old file
+                os.remove(f"static/music/poster/{songId}.{songCoverExt}")
+                # Upload new file
+                songCover.save(f"static/music/poster/{songId}.{songCover.filename.split('.')[-1]}")
+
+            db_connection.commit()
+            db_connection.close()
+
+
+            if userRoleId == 2:
+                return redirect(url_for('creatorDashboardScreen'))
+            elif userRoleId == 0:
+                return redirect(url_for('adminDashboard'))
+        
+        except Exception as e:
+            print(e)
+            f = open("logs/errorLogs.txt", "a")
+            f.write(f"[ERROR] {datetime.now()}: {e}\n")
+            f.close()
+            flash('Something Went Wrong.\nPlease try again later.', 'danger')
+            return redirect(url_for('loginScreen'))
+        
+
+@app.route('/song/<songId>/deactivate', methods=['POST'])
+def deactivateSong(songId):
+    if request.method == "POST":
+        try:
+            secretToken = session['secretToken']
+            userId = session['userId']
+            userName = session['userName']
+            userEmail = session['userEmail']
+            userRoleId = session['userRoleId']
+
+            if userRoleId != 2 and userRoleId != 0:
+                flash('Unauthorized Access', 'danger')
+                return redirect(url_for('loginScreen'))
+            
+            if len(str(secretToken)) == 0 or len(str(userId)) == 0 or len(str(userName)) == 0 or len(str(userEmail)) == 0 or len(str(userRoleId)) == 0:
+                flash('Session Expired', 'danger')
+                return redirect(url_for('loginScreen'))
+            
+            decryptedToken = validateToken(secretToken.split(',')[0], secretToken.split(',')[1], secretToken.split(',')[2])
+
+            if decryptedToken == -2:
+                flash('Session Expired', 'danger')
+                return redirect(url_for('loginScreen'))
+            
+            db_connection = sqlite3.connect('./schema/app_data.db')
+            db_cursor = db_connection.cursor()
+
+            # Get song data
+            db_cursor.execute(f"SELECT * FROM songData WHERE songId = ?", (songId,))
+            songData = db_cursor.fetchone()
+
+            if songData is None:
+                flash('Song not found', 'danger')
+                if userRoleId == 2:
+                    return redirect(url_for('creatorDashboardScreen'))
+                elif userRoleId == 0:
+                    return redirect(url_for('adminDashboard'))
+            
+            songId = songData[0]
+            createdBy = songData[12]
+        
+            # Check if user is creator of the song
+            if createdBy != userId and userRoleId != 0 and userRoleId == 2:
+                flash('Unauthorized Access', 'danger')
+                if userRoleId == 2:
+                    return redirect(url_for('creatorDashboardScreen'))
+                elif userRoleId == 0:
+                    return redirect(url_for('adminDashboard'))
+            
+            db_cursor.execute(f"UPDATE songData SET isActive = '0' WHERE songId = ?", (songId,))
+
+            affectedRows = db_cursor.rowcount
+            if affectedRows == 0:
+                flash('Something went wrong', 'danger')
+                return redirect(url_for('addNewSong'))
+            
+            db_connection.commit()
+            db_connection.close()
+
+            if userRoleId == 2:
+                return redirect(url_for('creatorDashboardScreen'))
+            elif userRoleId == 0:
+                return redirect(url_for('adminDashboard'))
+        
+        except Exception as e:
+            print(e)
             f = open("logs/errorLogs.txt", "a")
             f.write(f"[ERROR] {datetime.now()}: {e}\n")
             f.close()
@@ -541,6 +825,62 @@ def addNewSong():
 
 
 # /genre
+@app.route('/genre', methods=['GET'])
+def genreScreen():
+    try:
+        secretToken = session['secretToken']
+        userId = session['userId']
+        userName = session['userName']
+        userEmail = session['userEmail']
+        userRoleId = session['userRoleId']
+
+        if userRoleId != 2 and userRoleId != 0:
+            flash('Unauthorized Access', 'danger')
+            return redirect(url_for('loginScreen'))
+        
+        if len(str(secretToken)) == 0 or len(str(userId)) == 0 or len(str(userName)) == 0 or len(str(userEmail)) == 0 or len(str(userRoleId)) == 0:
+            flash('Session Expired', 'danger')
+            return redirect(url_for('loginScreen'))
+        
+        decryptedToken = validateToken(secretToken.split(',')[0], secretToken.split(',')[1], secretToken.split(',')[2])
+
+        if decryptedToken == -2:
+            flash('Session Expired', 'danger')
+            return redirect(url_for('loginScreen'))
+        elif decryptedToken == -1:
+            flash('Session Expired', 'danger')
+            return redirect(url_for('loginScreen'))
+        
+        db_connection = sqlite3.connect('./schema/app_data.db')
+        db_cursor = db_connection.cursor()
+
+        # Get all genres
+
+        if userRoleId == 2:
+            db_cursor.execute(f"SELECT * FROM genreData WHERE createdBy = ?", (userId,))
+            genreList = db_cursor.fetchall()
+        elif userRoleId == 0:
+            db_cursor.execute(f"SELECT * FROM genreData")
+            genreList = db_cursor.fetchall()
+
+        db_connection.close()
+
+        if genreList is None:
+            flash('No Genres found to add new songs! Add new Genres to continue', 'danger')
+            return redirect(url_for('addNewGenre'))
+        
+        if userRoleId == 2:
+            return render_template('creator/genre.html', genreList=genreList)
+        elif userRoleId == 0:
+            return render_template('admin/genre.html', genreList=genreList)
+        
+    except Exception as e:
+        f = open("logs/errorLogs.txt", "a")
+        f.write(f"[ERROR] {datetime.now()}: {e}\n")
+        f.close()
+        flash('Something Went Wrong.\nPlease try again later.', 'danger')
+        return redirect(url_for('loginScreen'))        
+
 @app.route('/genre/new', methods=['GET', 'POST'])
 def addNewGenre():
     if request.method == "POST":
@@ -573,7 +913,10 @@ def addNewGenre():
 
             if len(str(genreName)) == 0 or len(str(genreDescription)) == 0:
                 flash('Please fill all the fields', 'danger')
-                return redirect(url_for('creatorDashboardScreen'))
+                if userRoleId == 2:
+                    return redirect(url_for('creatorDashboardScreen'))
+                elif userRoleId == 0:
+                    return redirect(url_for('adminDashboard'))
             
             db_connection = sqlite3.connect('./schema/app_data.db')
             db_cursor = db_connection.cursor()
@@ -584,13 +927,19 @@ def addNewGenre():
 
             if genreData is not None:
                 flash('Genre already exists', 'danger')
-                return redirect(url_for('creatorDashboardScreen'))
+                if userRoleId == 2:
+                    return redirect(url_for('creatorDashboardScreen'))
+                elif userRoleId == 0:
+                    return redirect(url_for('adminDashboard'))
 
             db_cursor.execute(f"INSERT INTO genreData (genreName, genreDescription, isActive, createdBy) VALUES (?, ?, ?, ?)", (genreName, genreDescription, "1", userId))
             affectedRows = db_cursor.rowcount
             if affectedRows == 0:
                 flash('Something went wrong', 'danger')
-                return redirect(url_for('creatorDashboardScreen'))
+                if userRoleId == 2:
+                    return redirect(url_for('creatorDashboardScreen'))
+                elif userRoleId == 0:
+                    return redirect(url_for('adminDashboard'))
 
             db_connection.commit()
             db_connection.close()
@@ -605,7 +954,10 @@ def addNewGenre():
             f.write(f"[ERROR] {datetime.now()}: {e}\n")
             f.close()
             flash('Something Went Wrong.\nPlease try again later.', 'danger')
-            return redirect(url_for('creatorDashboardScreen'))
+            if userRoleId == 2:
+                return redirect(url_for('creatorDashboardScreen'))
+            elif userRoleId == 0:
+                return redirect(url_for('adminDashboard'))
     elif request.method == "GET":
         try: 
             secretToken = session['secretToken']
@@ -641,8 +993,181 @@ def addNewGenre():
             f.write(f"[ERROR] {datetime.now()}: {e}\n")
             f.close()
             flash('Something Went Wrong.\nPlease try again later.', 'danger')
-            return redirect(url_for('creatorDashboardScreen'))
+            if userRoleId == 2:
+                return redirect(url_for('creatorDashboardScreen'))
+            elif userRoleId == 0:
+                return redirect(url_for('adminDashboard'))
+            
 
+@app.route('/genre/<genreId>/edit', methods=['GET', 'POST'])
+def editGenre(genreId):
+    if request.method == "GET":
+        try:
+            secretToken = session['secretToken']
+            userId = session['userId']
+            userName = session['userName']
+            userEmail = session['userEmail']
+            userRoleId = session['userRoleId']
+
+            if userRoleId != 2 and userRoleId != 0:
+                flash('Unauthorized Access', 'danger')
+                return redirect(url_for('loginScreen'))
+            
+            if len(str(secretToken)) == 0 or len(str(userId)) == 0 or len(str(userName)) == 0 or len(str(userEmail)) == 0 or len(str(userRoleId)) == 0:
+                flash('Session Expired', 'danger')
+                return redirect(url_for('loginScreen'))
+            
+            decryptedToken = validateToken(secretToken.split(',')[0], secretToken.split(',')[1], secretToken.split(',')[2])
+
+            if decryptedToken == -2:
+                flash('Session Expired', 'danger')
+                return redirect(url_for('loginScreen'))
+            elif decryptedToken == -1:
+                flash('Session Expired', 'danger')
+                return redirect(url_for('loginScreen'))
+            
+            db_connection = sqlite3.connect('./schema/app_data.db')
+            db_cursor = db_connection.cursor()
+
+            # Get genre data
+            db_cursor.execute(f"SELECT * FROM genreData WHERE genreId = ?", (genreId,))
+            genreData = db_cursor.fetchone()
+
+            if genreData is None:
+                flash('Genre not found', 'danger')
+                if userRoleId == 2:
+                    return redirect(url_for('creatorDashboardScreen'))
+                elif userRoleId == 0:
+                    return redirect(url_for('adminDashboard'))
+            
+            genreId = genreData[0]
+            genreName = genreData[1]
+            genreDescription = genreData[2]
+            createdBy = genreData[4]
+        
+            # Check if user is creator of the genre
+            if createdBy != userId and userRoleId != 0 and userRoleId == 2:
+                flash('Unauthorized Access', 'danger')
+                if userRoleId == 2:
+                    return redirect(url_for('creatorDashboardScreen'))
+                elif userRoleId == 0:
+                    return redirect(url_for('adminDashboard'))
+            
+
+            if userRoleId == 2:
+                return render_template('creator/edit_genre.html', genreId=genreId, genreName=genreName, genreDescription=genreDescription)
+            elif userRoleId == 0:
+                return render_template('admin/edit_genre.html', genreId=genreId, genreName=genreName, genreDescription=genreDescription)
+            
+        except Exception as e:
+            print(e)
+            f = open("logs/errorLogs.txt", "a")
+            f.write(f"[ERROR] {datetime.now()}: {e}\n")
+            f.close()
+            flash('Something Went Wrong.\nPlease try again later.', 'danger')
+            if userRoleId == 2:
+                return redirect(url_for('creatorDashboardScreen'))
+            elif userRoleId == 0:
+                return redirect(url_for('adminDashboard'))
+            
+    # POST
+    elif request.method == "POST":
+        try:
+            secretToken = session['secretToken']
+            userId = session['userId']
+            userName = session['userName']
+            userEmail = session['userEmail']
+            userRoleId = session['userRoleId']
+
+            if userRoleId != 2 and userRoleId != 0:
+                flash('Unauthorized Access', 'danger')
+                return redirect(url_for('loginScreen'))
+            
+            if len(str(secretToken)) == 0 or len(str(userId)) == 0 or len(str(userName)) == 0 or len(str(userEmail)) == 0 or len(str(userRoleId)) == 0:
+                flash('Session Expired', 'danger')
+                return redirect(url_for('loginScreen'))
+            
+            genreName = request.form.get('genreName')
+            genreDescription = request.form.get('genreDescription')
+
+            if len(str(genreName)) == 0 or len(str(genreDescription)) == 0:
+                flash('Please fill all the fields', 'danger')
+                if userRoleId == 2:
+                    return redirect(url_for('creatorDashboardScreen'))
+                elif userRoleId == 0:
+                    return redirect(url_for('adminDashboard'))
+            
+            db_connection = sqlite3.connect('./schema/app_data.db')
+            db_cursor = db_connection.cursor()
+
+            # Get genre data
+            db_cursor.execute(f"SELECT * FROM genreData WHERE genreId = ?", (genreId,))
+            genreData = db_cursor.fetchone()
+
+            if genreData is None:
+                flash('Genre not found', 'danger')
+                if userRoleId == 2:
+                    return redirect(url_for('creatorDashboardScreen'))
+                elif userRoleId == 0:
+                    return redirect(url_for('adminDashboard'))
+            
+            genreId = genreData[0]
+            originalGenreName = genreData[1]
+            genreDescription = genreData[2]
+            createdBy = genreData[4]
+        
+            # Check if user is creator of the genre
+            if createdBy != userId and userRoleId != 0 and userRoleId == 2:
+                flash('Unauthorized Access', 'danger')
+                if userRoleId == 2:
+                    return redirect(url_for('creatorDashboardScreen'))
+                elif userRoleId == 0:
+                    return redirect(url_for('adminDashboard'))
+            
+
+            # INSERT DATA AND IF SUCCESSFUL, UPLOAD FILES
+            if len(str(genreName)) == 0 or len(str(genreDescription)) == 0:
+                flash('Please fill all the fields', 'danger')
+
+            if originalGenreName != genreName:
+                # Check if genre already exists
+                db_cursor.execute(f"SELECT * FROM genreData WHERE genreName = ?", (genreName,))
+                genreData = db_cursor.fetchone()
+
+                if genreData is not None:
+                    flash('Genre already exists', 'danger')
+                    if userRoleId == 2:
+                        return redirect(url_for('creatorDashboardScreen'))
+                    elif userRoleId == 0:
+                        return redirect(url_for('adminDashboard'))
+                    
+            db_cursor.execute(f"UPDATE genreData SET genreName = ?, genreDescription = ? WHERE genreId = ?", (genreName, genreDescription, genreId))
+
+            affectedRows = db_cursor.rowcount
+
+            if affectedRows == 0:
+                flash('Something went wrong', 'danger')
+                if userRoleId == 2:
+                    return redirect(url_for('creatorDashboardScreen'))
+                elif userRoleId == 0:
+                    return redirect(url_for('adminDashboard'))
+                
+            db_connection.commit()
+
+            db_connection.close()
+
+            return redirect(url_for('genreScreen'))
+            
+        except Exception as e:
+            print(e)
+            f = open("logs/errorLogs.txt", "a")
+            f.write(f"[ERROR] {datetime.now()}: {e}\n")
+            f.close()
+            flash('Something Went Wrong.\nPlease try again later.', 'danger')
+            if userRoleId == 2:
+                return redirect(url_for('creatorDashboardScreen'))
+            elif userRoleId == 0:
+                return redirect(url_for('adminDashboard'))
 
 if __name__ == '__main__':
     # reinitializeDatabase()

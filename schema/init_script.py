@@ -118,6 +118,8 @@ CREATE TABLE IF NOT EXISTS "songData" (
     "createdAt" TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "lastUpdatedBy" INTEGER NULL,
     "lastUpdatedAt" TEXT NULL,
+    "audioFileExt" TEXT NOT NULL,
+    "imageFileExt" INTEGER NOT NULL,
     FOREIGN KEY ("songGenreId") REFERENCES "genreData" ("genreId"),
     FOREIGN KEY ("songAlbumId") REFERENCES "albumData" ("albumId"),
     FOREIGN KEY ("createdBy") REFERENCES "userData" ("userId"),

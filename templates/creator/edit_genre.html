@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Music App | New Genre</title>
+    <title>Music App | Edit Genre</title>
 
     <!-- Styles -->
     <link rel="stylesheet" href="../../static/css/base.css">
@@ -37,19 +37,19 @@
 
     <div class="content">
         <div class="form-container">
-            <form action="/genre/new" method="POST">
-                <h1>Add New Genre</h1>
+            <form action="/genre/{{ genreId }}/edit" method="POST">
+                <h1>Update Genre</h1>
                 <hr />
                 <div class="input-container">
                     <label for="genreName">Genre Name</label>
-                    <input type="text" name="genreName" id="genreName" placeholder="Enter genre's name" style="width: 540px;" required />
+                    <input type="text" value="{{genreName}}" name="genreName" id="genreName" placeholder="Enter genre's name" style="width: 540px;" required />
                 </div>
                 <div class="input-container">
                     <label for="genreDescription">Tell something about the genre</label>
-                    <textarea type="text" name="genreDescription" id="genreDescription" placeholder="Genre Description>" style="width: 540px;"></textarea>
+                    <textarea type="text" name="genreDescription" id="genreDescription" placeholder="Genre Description>" style="width: 540px;">{{genreDescription}}</textarea>
                 </div>
                 <div class="input-container">
-                    <input type="submit" title="Add Genre" />
+                    <input type="submit" title="Update Genre" />
                 </div>
             </form>
         </div>

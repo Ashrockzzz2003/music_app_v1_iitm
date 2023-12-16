@@ -74,7 +74,7 @@
             mainScreen.style.filter = 'blur(0px)';
         }
 
-        function handlePlayPause(songId) {
+        function handlePlayPause(songId, songFormat) {
             const playButton = document.querySelector(`#playButton_${songId}`);
             const songCard = document.querySelector(`#songCard_${songId}`);
 
@@ -85,7 +85,7 @@
                     handlePause(songId);
                 }
             } else {
-                const audioUrl = `/static/music/song/${songId}.mp3`;
+                const audioUrl = `/static/music/song/${songId}.${songFormat}`;
                 const audioElement = new Audio(audioUrl);
                 audioElements[songId] = audioElement;
 
@@ -181,7 +181,7 @@
                     </a>
                     <span class="menu">
                         <li><a href="/">Profile</a></li>
-                        <li><a href="/">My Work</a></li>
+                        <li><a href="/genre">Manage Genres</a></li>
                         <li><a href="/auth/logout">Logout</a></li>
                     </span>
                     <span class="logo menu-trigger hidden">
@@ -226,7 +226,7 @@
                 <div style="display: block;">
                     <div class="songCard" id="songCard_{{song[0]}}">
                         <div class="songCard__image">
-                            <img src="/static/music/poster/{{song[0]}}.jpeg" alt="Song Image">
+                            <img src="/static/music/poster/{{song[0]}}.{{song[5]}}" alt="Song Image">
                         </div>
                         <div class="songCard__details">
                             <h3>{{song[1]}}</h3>
@@ -238,7 +238,7 @@
                                 <i class="material-icons">edit</i>
                             </a>
                             <div class="iconRow playButton" id="playButton_{{song[0]}}"
-                                onclick="handlePlayPause(`{{song[0]}}`)">
+                                onclick="handlePlayPause(`{{song[0]}}`, `{{song[4]}}`)">
                                 <i class="material-icons play">play_arrow</i>
                                 <i class="material-icons pause hidden">pause</i>
                                 <p class="button-text">Play</p>
