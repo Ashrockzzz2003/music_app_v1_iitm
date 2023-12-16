@@ -1,5 +1,0 @@
-[ERROR] 2023-12-16 22:50:42.393830: near "JOIN": syntax error
-[ERROR] 2023-12-16 22:51:10.397693: no such table: albumSongs
-[ERROR] 2023-12-16 22:51:36.692804: no such column: songData.genreId
-[ERROR] 2023-12-16 22:51:52.888411: album_details.html
-[ERROR] 2023-12-16 22:52:12.518589: album_details.html
