@@ -259,6 +259,51 @@ def adminDashboard():
         elif decryptedToken == -1:
             flash("Session Expired", "danger")
             return redirect(url_for("adminLoginScreen"))
+        
+        db_connection = sqlite3.connect("./schema/app_data.db")
+        db_cursor = db_connection.cursor()
+
+        # Get total CREATOR count
+        db_cursor.execute(f"SELECT COUNT(*) FROM userData WHERE userRoleId = 2")
+        creatorCount = db_cursor.fetchone()[0]
+
+        # Get total USER count
+        db_cursor.execute(f"SELECT COUNT(*) FROM userData WHERE userRoleId = 1")
+        userCount = db_cursor.fetchone()[0]
+
+        # Get total SONG count
+        db_cursor.execute(f"SELECT COUNT(*) FROM songData")
+        songCount = db_cursor.fetchone()[0]
+
+        # Get total ALBUM count
+        db_cursor.execute(f"SELECT COUNT(*) FROM albumData")
+        albumCount = db_cursor.fetchone()[0]
+
+        # Get total GENRE count
+        db_cursor.execute(f"SELECT COUNT(*) FROM genreData")
+        genreCount = db_cursor.fetchone()[0]
+
+        # Get total LANGUAGE count
+        db_cursor.execute(f"SELECT COUNT(*) FROM languageData")
+        languageCount = db_cursor.fetchone()[0]
+
+        # Get total PLAYLIST count
+        db_cursor.execute(f"SELECT COUNT(*) FROM playlistData")
+        playlistCount = db_cursor.fetchone()[0]
+
+        db_connection.close()
+
+        return render_template(
+            "admin/admin_dashboard.html",
+            creatorCount=creatorCount,
+            userCount=userCount,
+            songCount=songCount,
+            albumCount=albumCount,
+            genreCount=genreCount,
+            languageCount=languageCount,
+            playlistCount=playlistCount,
+        )
+
 
     except Exception as e:
         f = open("logs/errorLogs.txt", "a")
@@ -266,8 +311,6 @@ def adminDashboard():
         f.close()
         flash("Something Went Wrong.\nPlease try again later.", "danger")
         return redirect(url_for("adminLoginScreen"))
-
-    return render_template("admin/admin_dashboard.html")
 
 
 # /user
@@ -534,7 +577,7 @@ def songListScreen():
                 f"SELECT s.songId, s.songName, g.genreName, s.songLyrics, s.audioFileExt, s.imageFileExt, s.isActive FROM songData AS s JOIN genreData AS g ON g.genreId = s.songGenreId JOIN languageData AS l ON l.languageId = s.songLanguageId WHERE s.createdBy = ? AND s.songName LIKE ? ORDER BY s.createdAt DESC",
                 (userId, f"%{searchQuery}%"),
             )
-        else:
+        elif userRoleId == 1:
             # Get all songs
             if genreQuery != "" and languageQuery != "":
                 db_cursor.execute(
@@ -564,6 +607,38 @@ def songListScreen():
             else:
                 db_cursor.execute(
                     f"SELECT s.songId, s.songName, g.genreName, s.songLyrics, s.audioFileExt, s.imageFileExt, s.isActive FROM songData AS s JOIN genreData AS g ON g.genreId = s.songGenreId JOIN languageData AS l ON l.languageId = s.songLanguageId WHERE s.songName LIKE ? AND s.isActive = '1' ORDER BY s.createdAt DESC",
+                    (f"%{searchQuery}%",),
+                )
+
+        elif userRoleId == 0:
+            if genreQuery != "" and languageQuery != "":
+                db_cursor.execute(
+                    f"SELECT s.songId, s.songName, g.genreName, s.songLyrics, s.audioFileExt, s.imageFileExt, s.isActive FROM songData AS s JOIN genreData AS g ON g.genreId = s.songGenreId JOIN languageData AS l ON l.languageId = s.songLanguageId WHERE s.songName LIKE ? AND g.genreId = ? AND l.languageId = ? ORDER BY s.createdAt DESC",
+                    (
+                        f"%{searchQuery}%",
+                        genreQuery,
+                        languageQuery,
+                    ),
+                )
+            elif genreQuery != "" and languageQuery == "":
+                db_cursor.execute(
+                    f"SELECT s.songId, s.songName, g.genreName, s.songLyrics, s.audioFileExt, s.imageFileExt, s.isActive FROM songData AS s JOIN genreData AS g ON g.genreId = s.songGenreId JOIN languageData AS l ON l.languageId = s.songLanguageId WHERE s.songName LIKE ? AND g.genreId = ? ORDER BY s.createdAt DESC",
+                    (
+                        f"%{searchQuery}%",
+                        genreQuery,
+                    ),
+                )
+            elif genreQuery == "" and languageQuery != "":
+                db_cursor.execute(
+                    f"SELECT s.songId, s.songName, g.genreName, s.songLyrics, s.audioFileExt, s.imageFileExt, s.isActive FROM songData AS s JOIN genreData AS g ON g.genreId = s.songGenreId JOIN languageData AS l ON l.languageId = s.songLanguageId WHERE s.songName LIKE ? AND l.languageId = ? ORDER BY s.createdAt DESC",
+                    (
+                        f"%{searchQuery}%",
+                        languageQuery,
+                    ),
+                )
+            else:
+                db_cursor.execute(
+                    f"SELECT s.songId, s.songName, g.genreName, s.songLyrics, s.audioFileExt, s.imageFileExt, s.isActive FROM songData AS s JOIN genreData AS g ON g.genreId = s.songGenreId JOIN languageData AS l ON l.languageId = s.songLanguageId WHERE s.songName LIKE ? ORDER BY s.createdAt DESC",
                     (f"%{searchQuery}%",),
                 )
 
@@ -603,6 +678,8 @@ def songListScreen():
                 languageList=languageList,
                 songCount=songCount,
                 searchQuery=searchQuery,
+                songGenre=int(genreQuery) if genreQuery != "" else "",
+                songLanguage=int(languageQuery) if languageQuery != "" else "",
             )
 
         elif userRoleId == 1:
@@ -2551,8 +2628,21 @@ def albumDetails(albumId):
         if songList is None:
             songList = []
 
-        return render_template(
+        if userRoleId == 2:
+            return render_template(
             "creator/album_details.html",
+            albumId=albumId,
+            albumName=albumName,
+            albumDescription=albumDescription,
+            releaseDate=releaseDate,
+            createdBy=createdBy,
+            albumCoverExt=albumCoverExt,
+            songList=songList,
+        )
+
+        elif userRoleId == 0:
+            return render_template(
+            "admin/album_details.html",
             albumId=albumId,
             albumName=albumName,
             albumDescription=albumDescription,
@@ -2850,7 +2940,7 @@ def playlistScreen():
         if searchQuery is None:
             searchQuery = ""
 
-        if userRoleId != 1:
+        if userRoleId != 1 and userRoleId != 0:
             flash("Unauthorized Access", "danger")
             return redirect(url_for("loginScreen"))
 
@@ -2880,28 +2970,45 @@ def playlistScreen():
         db_connection = sqlite3.connect("./schema/app_data.db")
         db_cursor = db_connection.cursor()
 
-        # Get all playlists
-        db_cursor.execute(
-            f"SELECT * FROM playlistData WHERE playlistName LIKE ? AND userId = ?",
-            (f"%{searchQuery}%", userId),
-        )
-        playlistList = db_cursor.fetchall()
+        if userRoleId == 1:
+            # Get all playlists
+            db_cursor.execute(
+                f"SELECT * FROM playlistData WHERE playlistName LIKE ? AND userId = ?",
+                (f"%{searchQuery}%", userId),
+            )
+            playlistList = db_cursor.fetchall()
 
-        # Get public playlists
-        db_cursor.execute(
-            f"SELECT * FROM playlistData WHERE playlistName LIKE ? AND isPublic = '1' AND userId != ?",
-            (f"%{searchQuery}%", userId),
-        )
-        publicPlaylistList = db_cursor.fetchall()
+            # Get public playlists
+            db_cursor.execute(
+                f"SELECT * FROM playlistData WHERE playlistName LIKE ? AND isPublic = '1' AND userId != ?",
+                (f"%{searchQuery}%", userId),
+            )
+            publicPlaylistList = db_cursor.fetchall()
+        
+        elif userRoleId == 0:
+            # Get all playlists
+            db_cursor.execute(
+                f"SELECT * FROM playlistData WHERE playlistName LIKE ?",
+                (f"%{searchQuery}%",),
+            )
+            playlistList = db_cursor.fetchall()
 
         db_connection.close()
 
         if playlistList is None:
             playlistList = []
 
-        return render_template(
-            "user/playlist.html", playlistList=playlistList, searchQuery=searchQuery, publicPlaylistList=publicPlaylistList
-        )
+        if userRoleId == 1:
+            return render_template(
+                "user/playlist.html",
+                playlistList=playlistList,
+                publicPlaylistList=publicPlaylistList,
+                searchQuery=searchQuery,
+            )
+        elif userRoleId == 0:
+            return render_template(
+                "admin/playlist.html", playlistList=playlistList, searchQuery=searchQuery
+            )
 
     except Exception as e:
         f = open("logs/errorLogs.txt", "a")
@@ -2977,15 +3084,26 @@ def playlistDetails(playlistId):
 
         notUserPlaylist = (playListUserId != userId)
 
-        return render_template(
-            "user/playlist_details.html",
-            playlistId=playlistId,
-            playlistName=playlistName,
-            playlistDescription=playlistDescription,
-            isPublic=isPublic,
-            songList=songList,
-            notUserPlaylist=notUserPlaylist,
-        )
+        if userRoleId == 1:
+            return render_template(
+                "user/playlist_details.html",
+                playlistId=playlistId,
+                playlistName=playlistName,
+                playlistDescription=playlistDescription,
+                isPublic=isPublic,
+                songList=songList,
+                notUserPlaylist=notUserPlaylist,
+            )
+        elif userRoleId == 0:
+            return render_template(
+                "admin/playlist_details.html",
+                playlistId=playlistId,
+                playlistName=playlistName,
+                playlistDescription=playlistDescription,
+                isPublic=isPublic,
+                songList=songList,
+                notUserPlaylist=notUserPlaylist,
+            )
 
     except Exception as e:
         f = open("logs/errorLogs.txt", "a")

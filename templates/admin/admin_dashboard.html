@@ -9,6 +9,7 @@
     <!-- Styles -->
     <link rel="stylesheet" href="../static/css/base.css">
     <link rel="stylesheet" href="../static/css/dashboard.css">
+    <link rel="stylesheet" href="../../static/css/creator_dashboard.css">
 
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.0.0/crypto-js.min.js"></script>
@@ -25,8 +26,9 @@
                 </a>
                 <span class="menu">
                     <li><a href="/">Artists</a></li>
-                    <li><a href="/">Tracks</a></li>
-                    <li><a href="/">Albums</a></li>
+                    <li><a href="/song">Songs</a></li>
+                    <li><a href="/album">Albums</a></li>
+                    <li><a href="/playlist">Playlists</a></li>
                     <li><a href="/auth/logout">Logout</a></li>
                 </span>
                 <span class="logo menu-trigger hidden">
@@ -40,6 +42,65 @@
         <h1 style="margin-top: 0; margin-bottom: 2px">Welcome, {{session['userName']}}</h1>
         <div class="chip">
             Administator
+        </div>
+
+        <div class="row">
+            <div class="bigButton2">
+                <a href="/artist">
+                    <div style="padding: 16px;">
+                        <i class="material-icons">person</i>
+                    </div>
+                    <div class="count">{{creatorCount}} artists</div>
+                </a>
+            </div>
+            <div class="bigButton2">
+                <a href="/user">
+                    <div style="padding: 16px;">
+                        <i class="material-icons">people</i>
+                    </div>
+                    <div class="count">{{userCount}} users</div>
+                </a>
+            </div>
+            <div class="bigButton2">
+                <a href="/genre">
+                    <div style="padding: 16px;">
+                        <i class="material-icons">category</i>
+                    </div>
+                    <div class="count">{{genreCount}} genres</div>
+                </a>
+            </div>
+            <div class="bigButton2">
+                <a href="/song">
+                    <div style="padding: 16px;">
+                        <i class="material-icons">library_music</i>
+                    </div>
+                    <div class="count">{{songCount}} songs</div>
+                </a>
+            </div>
+            <div class="bigButton2">
+                <a href="/album">
+                    <div style="padding: 16px;">
+                        <i class="material-icons">album</i>
+                    </div>
+                    <div class="count">{{albumCount}} albums</div>
+                </a>
+            </div>
+            <div class="bigButton2">
+                <a href="/playlist">
+                    <div style="padding: 16px;">
+                        <i class="material-icons">playlist_play</i>
+                    </div>
+                    <div class="count">{{playlistCount}} playlists</div>
+                </a>
+            </div>
+            <div class="bigButton2">
+                <a href="/language">
+                    <div style="padding: 16px;">
+                        <i class="material-icons">language</i>
+                    </div>
+                    <div class="count">{{languageCount}} lanaguages</div>
+                </a>
+            </div>
         </div>
     </div>
 
