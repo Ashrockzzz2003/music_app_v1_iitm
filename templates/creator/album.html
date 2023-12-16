@@ -63,10 +63,13 @@
                 </div>
                 <hr />
                 <div class="albumCard__buttons">
-                    <div class="iconRow playButton">
+                    <a href="/album/{{album[0]}}/edit">
                         <i class="material-icons play">edit</i>
-                        <p class="button-text">Edit Album</p>
-                    </div>
+                    </a>
+                    <a class="iconRow playButton" href="/album/{{album[0]}}">
+                        <i class="material-icons play">library_music</i>
+                        <p class="button-text">View Album</p>
+                    </a>
                 </div>
             </div>
             {% endfor %}

@@ -172,6 +172,15 @@ CREATE TABLE IF NOT EXISTS "songComments" (
     CHECK ("isFlagged" IN ("0", "1"))
 );
 
+CREATE TABLE IF NOT EXISTS "albumSongs" (
+    "albumId" INTEGER NOT NULL,
+    "songId" INTEGER NOT NULL,
+    "createdAt" TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY ("albumId") REFERENCES "albumData" ("albumId"),
+    FOREIGN KEY ("songId") REFERENCES "songData" ("songId"),
+    PRIMARY KEY ("albumId", "songId")
+);
+
 CREATE TABLE IF NOT EXISTS "playlistData" (
     "playlistId" INTEGER PRIMARY KEY AUTOINCREMENT,
     "playlistName" TEXT NOT NULL,
