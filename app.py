@@ -1071,9 +1071,9 @@ def editSong(songId):
             return redirect(url_for("loginScreen"))
 
 
-@app.route("/song/<songId>/deactivate", methods=["POST"])
+@app.route("/song/<songId>/deactivate", methods=["GET"])
 def deactivateSong(songId):
-    if request.method == "POST":
+    if request.method == "GET":
         try:
             secretToken = session["secretToken"]
             userId = session["userId"]
@@ -1142,10 +1142,7 @@ def deactivateSong(songId):
             db_connection.commit()
             db_connection.close()
 
-            if userRoleId == 2:
-                return redirect(url_for("creatorDashboardScreen"))
-            elif userRoleId == 0:
-                return redirect(url_for("adminDashboard"))
+            return redirect(url_for("songListScreen"))
 
         except Exception as e:
             print(e)
@@ -1156,9 +1153,9 @@ def deactivateSong(songId):
             return redirect(url_for("loginScreen"))
 
 
-@app.route("/song/<songId>/activate", methods=["POST"])
+@app.route("/song/<songId>/activate", methods=["GET"])
 def activateSong(songId):
-    if request.method == "POST":
+    if request.method == "GET":
         try:
             secretToken = session["secretToken"]
             userId = session["userId"]
@@ -1227,15 +1224,7 @@ def activateSong(songId):
             db_connection.commit()
             db_connection.close()
 
-            if userRoleId == 2:
-                return redirect(url_for("creatorDashboardScreen"))
-
-            elif userRoleId == 0:
-                return redirect(url_for("adminDashboard"))
-
-            else:
-                flash("Unauthorized Access", "danger")
-                return redirect(url_for("loginScreen"))
+            return redirect(url_for("songListScreen"))
 
         except Exception as e:
             print(e)
@@ -1979,6 +1968,10 @@ def albumScreen():
         userName = session["userName"]
         userEmail = session["userEmail"]
         userRoleId = session["userRoleId"]
+        searchQuery = request.args.get("search")
+
+        if searchQuery is None:
+            searchQuery = ""
 
         if userRoleId != 2 and userRoleId != 0:
             flash("Unauthorized Access", "danger")
@@ -2013,10 +2006,10 @@ def albumScreen():
         # Get all albums
 
         if userRoleId == 2:
-            db_cursor.execute(f"SELECT * FROM albumData WHERE createdBy = ?", (userId,))
+            db_cursor.execute(f"SELECT * FROM albumData WHERE createdBy = ? AND albumName LIKE ?", (userId, f"%{searchQuery}%"))
             albumList = db_cursor.fetchall()
         elif userRoleId == 0:
-            db_cursor.execute(f"SELECT * FROM albumData")
+            db_cursor.execute(f"SELECT * FROM albumData WHERE albumName LIKE ?", (f"%{searchQuery}%",))
             albumList = db_cursor.fetchall()
 
         db_connection.close()
@@ -2028,9 +2021,9 @@ def albumScreen():
             return redirect(url_for("addNewAlbum"))
 
         if userRoleId == 2:
-            return render_template("creator/album.html", albumList=albumList)
+            return render_template("creator/album.html", albumList=albumList, searchQuery=searchQuery)
         elif userRoleId == 0:
-            return render_template("admin/album.html", albumList=albumList)
+            return render_template("admin/album.html", albumList=albumList, searchQuery=searchQuery)
 
     except Exception as e:
         f = open("logs/errorLogs.txt", "a")
