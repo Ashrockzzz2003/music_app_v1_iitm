@@ -954,10 +954,7 @@ def addNewGenre():
             f.write(f"[ERROR] {datetime.now()}: {e}\n")
             f.close()
             flash('Something Went Wrong.\nPlease try again later.', 'danger')
-            if userRoleId == 2:
-                return redirect(url_for('creatorDashboardScreen'))
-            elif userRoleId == 0:
-                return redirect(url_for('adminDashboard'))
+            return redirect(url_for('loginScreen'))
     elif request.method == "GET":
         try: 
             secretToken = session['secretToken']
@@ -1065,10 +1062,7 @@ def editGenre(genreId):
             f.write(f"[ERROR] {datetime.now()}: {e}\n")
             f.close()
             flash('Something Went Wrong.\nPlease try again later.', 'danger')
-            if userRoleId == 2:
-                return redirect(url_for('creatorDashboardScreen'))
-            elif userRoleId == 0:
-                return redirect(url_for('adminDashboard'))
+            return redirect(url_for('loginScreen'))
             
     # POST
     elif request.method == "POST":
@@ -1164,10 +1158,7 @@ def editGenre(genreId):
             f.write(f"[ERROR] {datetime.now()}: {e}\n")
             f.close()
             flash('Something Went Wrong.\nPlease try again later.', 'danger')
-            if userRoleId == 2:
-                return redirect(url_for('creatorDashboardScreen'))
-            elif userRoleId == 0:
-                return redirect(url_for('adminDashboard'))
+            return redirect(url_for('loginScreen'))
             
 
 # /album
@@ -1237,12 +1228,12 @@ def addNewAlbum():
             userEmail = session['userEmail']
             userRoleId = session['userRoleId']
 
-            if userRoleId != 2 and userRoleId != 0:
-                flash('Unauthorized Access', 'danger')
-                return redirect(url_for('loginScreen'))
-            
             if len(str(secretToken)) == 0 or len(str(userId)) == 0 or len(str(userName)) == 0 or len(str(userEmail)) == 0 or len(str(userRoleId)) == 0:
                 flash('Session Expired', 'danger')
+                return redirect(url_for('loginScreen'))
+
+            if userRoleId != 2 and userRoleId != 0:
+                flash('Unauthorized Access', 'danger')
                 return redirect(url_for('loginScreen'))
 
             decryptedToken = validateToken(secretToken.split(',')[0], secretToken.split(',')[1], secretToken.split(',')[2])
@@ -1270,15 +1261,11 @@ def addNewAlbum():
                 return render_template('admin/new_album.html')
             
         except Exception as e:
-            print(e)
             f = open("logs/errorLogs.txt", "a")
             f.write(f"[ERROR] {datetime.now()}: {e}\n")
             f.close()
             flash('Something Went Wrong.\nPlease try again later.', 'danger')
-            if userRoleId == 2:
-                return redirect(url_for('creatorDashboardScreen'))
-            elif userRoleId == 0:
-                return redirect(url_for('adminDashboard'))
+            return redirect(url_for('loginScreen'))
             
     elif request.method == "POST":
         try:
@@ -1346,15 +1333,11 @@ def addNewAlbum():
             
 
         except Exception as e:
-            print(e)
             f = open("logs/errorLogs.txt", "a")
             f.write(f"[ERROR] {datetime.now()}: {e}\n")
             f.close()
             flash('Something Went Wrong.\nPlease try again later.', 'danger')
-            if userRoleId == 2:
-                return redirect(url_for('creatorDashboardScreen'))
-            elif userRoleId == 0:
-                return redirect(url_for('adminDashboard'))
+            return redirect(url_for('loginScreen'))
 
 if __name__ == '__main__':
     # reinitializeDatabase()
