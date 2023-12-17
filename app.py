@@ -524,7 +524,7 @@ def creatorDashboardScreen():
 # /song
 @app.route("/song", methods=["GET"])
 def songListScreen():
-    try:
+    # try:
         secretToken = session["secretToken"]
         userId = session["userId"]
         userName = session["userName"]
@@ -574,14 +574,14 @@ def songListScreen():
         if userRoleId == 2:
             # Get all songs
             db_cursor.execute(
-                f"SELECT s.songId, s.songName, g.genreName, s.songLyrics, s.audioFileExt, s.imageFileExt, s.isActive FROM songData AS s JOIN genreData AS g ON g.genreId = s.songGenreId JOIN languageData AS l ON l.languageId = s.songLanguageId WHERE s.createdBy = ? AND s.songName LIKE ? ORDER BY s.createdAt DESC",
+                f"SELECT s.songId, s.songName, g.genreName, s.songLyrics, s.audioFileExt, s.imageFileExt, s.isActive, s.likesCount FROM songData AS s JOIN genreData AS g ON g.genreId = s.songGenreId JOIN languageData AS l ON l.languageId = s.songLanguageId WHERE s.createdBy = ? AND s.songName LIKE ? ORDER BY s.createdAt DESC",
                 (userId, f"%{searchQuery}%"),
             )
         elif userRoleId == 1:
             # Get all songs
             if genreQuery != "" and languageQuery != "":
                 db_cursor.execute(
-                    f"SELECT s.songId, s.songName, g.genreName, s.songLyrics, s.audioFileExt, s.imageFileExt, s.isActive FROM songData AS s JOIN genreData AS g ON g.genreId = s.songGenreId JOIN languageData AS l ON l.languageId = s.songLanguageId WHERE s.songName LIKE ? AND g.genreId = ? AND l.languageId = ? AND s.isActive = '1' ORDER BY s.createdAt DESC",
+                    f"SELECT s.songId, s.songName, g.genreName, s.songLyrics, s.audioFileExt, s.imageFileExt, s.isActive, s.likesCount FROM songData AS s JOIN genreData AS g ON g.genreId = s.songGenreId JOIN languageData AS l ON l.languageId = s.songLanguageId WHERE s.songName LIKE ? AND g.genreId = ? AND l.languageId = ? AND s.isActive = '1' ORDER BY s.createdAt DESC",
                     (
                         f"%{searchQuery}%",
                         genreQuery,
@@ -590,7 +590,7 @@ def songListScreen():
                 )
             elif genreQuery != "" and languageQuery == "":
                 db_cursor.execute(
-                    f"SELECT s.songId, s.songName, g.genreName, s.songLyrics, s.audioFileExt, s.imageFileExt, s.isActive FROM songData AS s JOIN genreData AS g ON g.genreId = s.songGenreId JOIN languageData AS l ON l.languageId = s.songLanguageId WHERE s.songName LIKE ? AND g.genreId = ? AND s.isActive = '1' ORDER BY s.createdAt DESC",
+                    f"SELECT s.songId, s.songName, g.genreName, s.songLyrics, s.audioFileExt, s.imageFileExt, s.isActive, s.likesCount FROM songData AS s JOIN genreData AS g ON g.genreId = s.songGenreId JOIN languageData AS l ON l.languageId = s.songLanguageId WHERE s.songName LIKE ? AND g.genreId = ? AND s.isActive = '1' ORDER BY s.createdAt DESC",
                     (
                         f"%{searchQuery}%",
                         genreQuery,
@@ -598,7 +598,7 @@ def songListScreen():
                 )
             elif genreQuery == "" and languageQuery != "":
                 db_cursor.execute(
-                    f"SELECT s.songId, s.songName, g.genreName, s.songLyrics, s.audioFileExt, s.imageFileExt, s.isActive FROM songData AS s JOIN genreData AS g ON g.genreId = s.songGenreId JOIN languageData AS l ON l.languageId = s.songLanguageId WHERE s.songName LIKE ? AND l.languageId = ? AND s.isActive = '1' ORDER BY s.createdAt DESC",
+                    f"SELECT s.songId, s.songName, g.genreName, s.songLyrics, s.audioFileExt, s.imageFileExt, s.isActive, s.likesCount FROM songData AS s JOIN genreData AS g ON g.genreId = s.songGenreId JOIN languageData AS l ON l.languageId = s.songLanguageId WHERE s.songName LIKE ? AND l.languageId = ? AND s.isActive = '1' ORDER BY s.createdAt DESC",
                     (
                         f"%{searchQuery}%",
                         languageQuery,
@@ -606,14 +606,14 @@ def songListScreen():
                 )
             else:
                 db_cursor.execute(
-                    f"SELECT s.songId, s.songName, g.genreName, s.songLyrics, s.audioFileExt, s.imageFileExt, s.isActive FROM songData AS s JOIN genreData AS g ON g.genreId = s.songGenreId JOIN languageData AS l ON l.languageId = s.songLanguageId WHERE s.songName LIKE ? AND s.isActive = '1' ORDER BY s.createdAt DESC",
+                    f"SELECT s.songId, s.songName, g.genreName, s.songLyrics, s.audioFileExt, s.imageFileExt, s.isActive, s.likesCount FROM songData AS s JOIN genreData AS g ON g.genreId = s.songGenreId JOIN languageData AS l ON l.languageId = s.songLanguageId WHERE s.songName LIKE ? AND s.isActive = '1' ORDER BY s.createdAt DESC",
                     (f"%{searchQuery}%",),
                 )
 
         elif userRoleId == 0:
             if genreQuery != "" and languageQuery != "":
                 db_cursor.execute(
-                    f"SELECT s.songId, s.songName, g.genreName, s.songLyrics, s.audioFileExt, s.imageFileExt, s.isActive FROM songData AS s JOIN genreData AS g ON g.genreId = s.songGenreId JOIN languageData AS l ON l.languageId = s.songLanguageId WHERE s.songName LIKE ? AND g.genreId = ? AND l.languageId = ? ORDER BY s.createdAt DESC",
+                    f"SELECT s.songId, s.songName, g.genreName, s.songLyrics, s.audioFileExt, s.imageFileExt, s.isActive, s.likesCount FROM songData AS s JOIN genreData AS g ON g.genreId = s.songGenreId JOIN languageData AS l ON l.languageId = s.songLanguageId WHERE s.songName LIKE ? AND g.genreId = ? AND l.languageId = ? ORDER BY s.createdAt DESC",
                     (
                         f"%{searchQuery}%",
                         genreQuery,
@@ -622,7 +622,7 @@ def songListScreen():
                 )
             elif genreQuery != "" and languageQuery == "":
                 db_cursor.execute(
-                    f"SELECT s.songId, s.songName, g.genreName, s.songLyrics, s.audioFileExt, s.imageFileExt, s.isActive FROM songData AS s JOIN genreData AS g ON g.genreId = s.songGenreId JOIN languageData AS l ON l.languageId = s.songLanguageId WHERE s.songName LIKE ? AND g.genreId = ? ORDER BY s.createdAt DESC",
+                    f"SELECT s.songId, s.songName, g.genreName, s.songLyrics, s.audioFileExt, s.imageFileExt, s.isActive, s.likesCount FROM songData AS s JOIN genreData AS g ON g.genreId = s.songGenreId JOIN languageData AS l ON l.languageId = s.songLanguageId WHERE s.songName LIKE ? AND g.genreId = ? ORDER BY s.createdAt DESC",
                     (
                         f"%{searchQuery}%",
                         genreQuery,
@@ -630,7 +630,7 @@ def songListScreen():
                 )
             elif genreQuery == "" and languageQuery != "":
                 db_cursor.execute(
-                    f"SELECT s.songId, s.songName, g.genreName, s.songLyrics, s.audioFileExt, s.imageFileExt, s.isActive FROM songData AS s JOIN genreData AS g ON g.genreId = s.songGenreId JOIN languageData AS l ON l.languageId = s.songLanguageId WHERE s.songName LIKE ? AND l.languageId = ? ORDER BY s.createdAt DESC",
+                    f"SELECT s.songId, s.songName, g.genreName, s.songLyrics, s.audioFileExt, s.imageFileExt, s.isActive, s.likesCount FROM songData AS s JOIN genreData AS g ON g.genreId = s.songGenreId JOIN languageData AS l ON l.languageId = s.songLanguageId WHERE s.songName LIKE ? AND l.languageId = ? ORDER BY s.createdAt DESC",
                     (
                         f"%{searchQuery}%",
                         languageQuery,
@@ -638,7 +638,7 @@ def songListScreen():
                 )
             else:
                 db_cursor.execute(
-                    f"SELECT s.songId, s.songName, g.genreName, s.songLyrics, s.audioFileExt, s.imageFileExt, s.isActive FROM songData AS s JOIN genreData AS g ON g.genreId = s.songGenreId JOIN languageData AS l ON l.languageId = s.songLanguageId WHERE s.songName LIKE ? ORDER BY s.createdAt DESC",
+                    f"SELECT s.songId, s.songName, g.genreName, s.songLyrics, s.audioFileExt, s.imageFileExt, s.isActive, s.likesCount FROM songData AS s JOIN genreData AS g ON g.genreId = s.songGenreId JOIN languageData AS l ON l.languageId = s.songLanguageId WHERE s.songName LIKE ? ORDER BY s.createdAt DESC",
                     (f"%{searchQuery}%",),
                 )
 
@@ -649,6 +649,55 @@ def songListScreen():
             songList = []
 
         songCount = len(songList)
+
+        # Liked Songs
+        db_cursor.execute(
+            "SELECT songId, isLike FROM songLikes WHERE userId = ?", (userId,)
+        )
+        likedSongData = db_cursor.fetchall()
+        if likedSongData is None:
+            likedSongData = []
+
+        likedSongs = []
+        unLikedSongs = []
+        for song in likedSongData:
+            if song[1] == '1':
+                likedSongs.append(song[0])
+            elif song[1] == '0':
+                unLikedSongs.append(song[0])
+
+        for i in range(len(songList)):
+            if songList[i][0] in likedSongs:
+                songList[i] = list(songList[i])
+                songList[i].append(True)
+            elif songList[i][0] in unLikedSongs:
+                songList[i] = list(songList[i])
+                songList[i].append(False)
+            else:
+                songList[i] = list(songList[i])
+                songList[i].append(None)
+
+        # dislikedSongIds Count
+        db_cursor.execute(
+            "SELECT songId, COUNT(*) FROM songLikes WHERE isLike = '0' GROUP BY songId"
+        )
+        dislikedSongIds = db_cursor.fetchall()
+        if dislikedSongIds is None:
+            dislikedSongIds = []
+
+        for i in range(len(songList)):
+            flag = False
+            for j in range(len(dislikedSongIds)):
+                if songList[i][0] == dislikedSongIds[j][0]:
+                    songList[i] = list(songList[i])
+                    songList[i].append(dislikedSongIds[j][1])
+                    flag = True
+                    break
+            if flag == False:
+                songList[i] = list(songList[i])
+                songList[i].append(0)
+            
+            print(songList[i][5:])
 
         # Get all genres
         db_cursor.execute(f"SELECT * FROM genreData")
@@ -697,14 +746,14 @@ def songListScreen():
             flash("Unauthorized Access", "danger")
             return redirect(url_for("loginScreen"))
 
-    except Exception as e:
-        print(e)
-        f = open("logs/errorLogs.txt", "a")
-        f.write(f"[ERROR] {datetime.now()}: {e}\n")
-        f.close()
+    # except Exception as e:
+    #     print(e)
+    #     f = open("logs/errorLogs.txt", "a")
+    #     f.write(f"[ERROR] {datetime.now()}: {e}\n")
+    #     f.close()
 
-        flash("Something Went Wrong.\nPlease try again later.", "danger")
-        return redirect(url_for("loginScreen"))
+    #     flash("Something Went Wrong.\nPlease try again later.", "danger")
+    #     return redirect(url_for("loginScreen"))
 
 
 @app.route("/song/new", methods=["GET", "POST"])
@@ -1196,6 +1245,191 @@ def editSong(songId):
             flash("Something Went Wrong.\nPlease try again later.", "danger")
             return redirect(url_for("loginScreen"))
 
+@app.route("/song/<songId>/like", methods=["GET"])
+def likeSong(songId):
+    if request.method == "GET":
+        try:
+            secretToken = session["secretToken"]
+            userId = session["userId"]
+            userName = session["userName"]
+            userEmail = session["userEmail"]
+            userRoleId = session["userRoleId"]
+
+            if userRoleId != 1 and userRoleId != 0 and userRoleId != 2:
+                flash("Unauthorized Access", "danger")
+                return redirect(url_for("loginScreen"))
+
+            if (
+                len(str(secretToken)) == 0
+                or len(str(userId)) == 0
+                or len(str(userName)) == 0
+                or len(str(userEmail)) == 0
+                or len(str(userRoleId)) == 0
+            ):
+                return redirect(url_for("loginScreen"))
+
+            decryptedToken = validateToken(
+                secretToken.split(",")[0],
+                secretToken.split(",")[1],
+                secretToken.split(",")[2],
+            )
+
+            if decryptedToken == -2:
+                return redirect(url_for("loginScreen"))
+            elif decryptedToken == -1:
+                return redirect(url_for("loginScreen"))
+
+            db_connection = sqlite3.connect("./schema/app_data.db")
+            db_cursor = db_connection.cursor()
+
+            # Check if user has already liked the song
+            db_cursor.execute(
+                f"SELECT * FROM songLikes WHERE songId = ? AND userId = ?",
+                (songId, userId),
+            )
+            songLikeData = db_cursor.fetchone()
+
+            if songLikeData is None:
+                db_cursor.execute(
+                    f"INSERT INTO songLikes (songId, userId, isLike) VALUES (?, ?, '1')",
+                    (songId, userId),
+                )
+                affectedRows = db_cursor.rowcount
+                if affectedRows == 0:
+                    return {"message": "Something went wrong"}
+
+                db_cursor.execute(
+                    f"UPDATE songData SET likesCount = likesCount + 1 WHERE songId = ?",
+                    (songId,),
+                )
+
+                affectedRows = db_cursor.rowcount
+                if affectedRows == 0:
+                    return redirect(url_for("songListScreen"))
+                
+            else:
+                if songLikeData[2] == '1':
+                    flash("Already Liked", "danger")
+                    return redirect(url_for("songListScreen"))
+                
+                db_cursor.execute(
+                    f"UPDATE songLikes SET isLike = '1' WHERE songId = ? AND userId = ?",
+                    (songId, userId),
+                )
+                affectedRows = db_cursor.rowcount
+                if affectedRows == 0:
+                    return redirect(url_for("loginScreen"))
+                
+                db_cursor.execute(
+                    f"UPDATE songData SET likesCount = likesCount + 1 WHERE songId = ?",
+                    (songId,),
+                )
+
+                affectedRows = db_cursor.rowcount
+                if affectedRows == 0:
+                    return redirect(url_for("songListScreen"))
+
+            db_connection.commit()
+            db_connection.close()
+
+            return redirect(url_for("songListScreen"))
+
+        except Exception as e:
+            print(e)
+            return {"message": "Something Went Wrong.\nPlease try again later."}
+        
+@app.route("/song/<songId>/unlike", methods=["GET"])
+def unlikeSong(songId):
+    if request.method == "GET":
+        try:
+            secretToken = session["secretToken"]
+            userId = session["userId"]
+            userName = session["userName"]
+            userEmail = session["userEmail"]
+            userRoleId = session["userRoleId"]
+
+            if userRoleId != 1 and userRoleId != 0 and userRoleId != 2:
+                flash("Unauthorized Access", "danger")
+                return redirect(url_for("loginScreen"))
+            
+            if (
+                len(str(secretToken)) == 0
+                or len(str(userId)) == 0
+                or len(str(userName)) == 0
+                or len(str(userEmail)) == 0
+                or len(str(userRoleId)) == 0
+            ):
+                return redirect(url_for("loginScreen"))
+            
+            decryptedToken = validateToken(
+                secretToken.split(",")[0],
+                secretToken.split(",")[1],
+                secretToken.split(",")[2]
+            )
+
+            if decryptedToken == -2:
+                return redirect(url_for("loginScreen"))
+            elif decryptedToken == -1:
+                return redirect(url_for("loginScreen"))
+            
+            db_connection = sqlite3.connect("./schema/app_data.db")
+            db_cursor = db_connection.cursor()
+
+            # Check if user has already liked the song
+            db_cursor.execute(
+                f"SELECT * FROM songLikes WHERE songId = ? AND userId = ?",
+                (songId, userId)
+            )
+
+            songLikeData = db_cursor.fetchone()
+
+            if songLikeData is None:
+                db_cursor.execute(
+                    f"INSERT INTO songLikes (songId, userId, isLike) VALUES (?, ?, '0')",
+                    (songId, userId)
+                )
+                affectedRows = db_cursor.rowcount
+                if affectedRows == 0:
+                    return redirect(url_for("songListScreen"))
+                
+                db_cursor.execute(
+                    f"UPDATE songData SET likesCount = likesCount - 1 WHERE songId = ?",
+                    (songId,)
+                )
+
+                affectedRows = db_cursor.rowcount
+                if affectedRows == 0:
+                    return redirect(url_for("songListScreen"))
+                
+            else:
+                if songLikeData[2] == '0':
+                    flash("Already Unliked", "danger")
+                    return redirect(url_for("songListScreen"))
+                db_cursor.execute(
+                    f"UPDATE songLikes SET isLike = '0' WHERE songId = ? AND userId = ?",
+                    (songId, userId)
+                )
+                affectedRows = db_cursor.rowcount
+                if affectedRows == 0:
+                    return redirect(url_for("songListScreen"))
+                
+                db_cursor.execute(
+                    f"UPDATE songData SET likesCount = likesCount - 1 WHERE songId = ?",
+                    (songId,)
+                )
+
+                affectedRows = db_cursor.rowcount
+                if affectedRows == 0:
+                    return redirect(url_for("songListScreen"))
+                
+            db_connection.commit()
+            db_connection.close()
+
+            return redirect(url_for("songListScreen"))
+
+        except Exception as e:
+            print(e)
+            return {"message": "Something Went Wrong.\nPlease try again later."}
 
 @app.route("/song/<songId>/deactivate", methods=["GET"])
 def deactivateSong(songId):

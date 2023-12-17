@@ -310,6 +310,7 @@ main {
   margin: 0 auto;
   width: 760px;
   max-width: 100%;
+  position: relative;
 }
 
 @media (max-width: 750px) {
@@ -643,7 +644,7 @@ input[type="file"]::-webkit-file-upload-button:hover {
   justify-content: center;
   margin: 8px;
   width: 240px;
-  height: 320px;
+  height: 360px;
   background-color: rgba(41, 42, 45, 0.4);
   border-radius: 16px;
   border: 1px solid rgba(41, 42, 45, 0.4);

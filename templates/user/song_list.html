@@ -242,6 +242,17 @@
                             </a>
                             {% endif %}
                         </div>
+                        <div class="songCard__buttons">
+                            <a class="iconRow playButton" style="cursor: pointer; background-image: none; color: white;" id="likeButton_{{song[0]}}"
+                                href="/song/{{song[0]}}/like">
+                                <i class="material-icons">thumb_up</i>
+                                <p class="button-text">{{song[7]}}</p>
+                            </a>
+                            <a style="cursor: pointer" id="unLikeButton_{{song[0]}}"
+                                href="/song/{{song[0]}}/unlike">
+                                <i class="material-icons">thumb_down</i>
+                            </a>
+                        </div>
                     </div>
                 </div>
                 {% endfor %}
@@ -259,6 +270,15 @@
             </div>
         </div>
 
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <script>
+            alert("{{ message }}");
+        </script>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
 
         <!-- JS -->
         <script type="text/javascript" src="../../static/js/base.js"></script>
