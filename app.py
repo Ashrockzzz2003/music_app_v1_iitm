@@ -17,6 +17,10 @@ app.secret_key = "OkvzD0IvqdPOa47J0q3z5VaGy2cCDoP6V5GEfO0kGeq3vFfk1cb7vs8QMJiwF0
 
 app.config["UPLOAD_FOLDER"] = "static"
 
+# /
+@app.route("/", methods=["GET"])
+def homeScreen():
+    return render_template("home.html")
 
 # /auth
 @app.route("/auth/login", methods=["GET", "POST"])
