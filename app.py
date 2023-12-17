@@ -3991,6 +3991,8 @@ def apiGetAllSongs():
             f"SELECT * FROM songData JOIN genreData ON songData.songGenreId = genreData.genreId JOIN languageData ON songData.songLanguageId = languageData.languageId"
         )
 
+        songList = db_cursor.fetchall()
+
         # dict of songs
         songList = [dict(zip([key[0] for key in db_cursor.description], song)) for song in songList]
         db_connection.close()
@@ -4071,6 +4073,346 @@ def apiGetSong(songId):
             }
         )
 
+    except Exception as e:
+        print(e)
+        return jsonify({"status": "error", "message": "Something Went Wrong"})
+    
+# playlist
+@app.route("/api/playlist", methods=["GET"])
+def apiGetAllPlaylists():
+    try:
+        header = request.headers.get("Authorization")
+        if header is None:
+            return jsonify({"status": "error", "message": "Session Expired"})
+        
+        secretToken = header.split(" ")[1]
+
+        if len(str(secretToken)) == 0 or secretToken is None:
+            return jsonify({"status": "error", "message": "Session Expired"})
+
+        decryptedToken = validateToken(
+            secretToken.split(",")[0],
+            secretToken.split(",")[1],
+            secretToken.split(",")[2],
+        )
+
+        userId = decryptedToken["userId"]
+
+        if decryptedToken == -2:
+            return jsonify({"status": "error", "message": "Session Expired"})
+        elif decryptedToken == -1:
+            return jsonify({"status": "error", "message": "Session Expired"})
+
+        db_connection = sqlite3.connect("./schema/app_data.db")
+        db_cursor = db_connection.cursor()
+
+        # Check if user Exists and check role
+        db_cursor.execute(
+            f"SELECT userRoleId FROM userData WHERE userId = ?", (userId,)
+        )
+
+        userData = db_cursor.fetchone()
+
+        if userData is None:
+            return jsonify({"status": "error", "message": "Invalid Credentials"})
+        
+        userRoleId = userData[0]
+
+        if userRoleId != 1 and userRoleId != 0 and userRoleId != 2:
+            return jsonify({"status": "error", "message": "Unauthorized Access"})
+        
+        # Get all playlists
+        db_cursor.execute(
+            f"SELECT * FROM playlistData"
+        )
+
+        playlistList = db_cursor.fetchall()
+        if playlistList is None:
+            return jsonify({"status": "error", "message": "No playlists found"})
+        
+        playlistList = [dict(zip([key[0] for key in db_cursor.description], playlist)) for playlist in playlistList]
+
+        db_connection.close()
+
+        return jsonify(
+            {
+                "status": "success",
+                "message": "Playlists Fetched",
+                "playlistList": playlistList,
+            }
+        )
+
+    except Exception as e:
+        print(e)
+        return jsonify({"status": "error", "message": "Something Went Wrong"})
+    
+@app.route("/api/playlist/<playlistId>", methods=["GET"])
+def apiGetPlaylist(playlistId):
+    try:
+        header = request.headers.get("Authorization")
+        if header is None:
+            return jsonify({"status": "error", "message": "Session Expired"})
+        
+        secretToken = header.split(" ")[1]
+
+        if len(str(secretToken)) == 0 or secretToken is None:
+            return jsonify({"status": "error", "message": "Session Expired"})
+
+        decryptedToken = validateToken(
+            secretToken.split(",")[0],
+            secretToken.split(",")[1],
+            secretToken.split(",")[2],
+        )
+
+        userId = decryptedToken["userId"]
+
+        if decryptedToken == -2:
+            return jsonify({"status": "error", "message": "Session Expired"})
+        elif decryptedToken == -1:
+            return jsonify({"status": "error", "message": "Session Expired"})
+
+        db_connection = sqlite3.connect("./schema/app_data.db")
+        db_cursor = db_connection.cursor()
+
+        # Check if user Exists and check role
+        db_cursor.execute(
+            f"SELECT userRoleId FROM userData WHERE userId = ?", (userId,)
+        )
+
+        userData = db_cursor.fetchone()
+
+        if userData is None:
+            return jsonify({"status": "error", "message": "Invalid Credentials"})
+        
+        userRoleId = userData[0]
+
+        if userRoleId != 1 and userRoleId != 0 and userRoleId != 2:
+            return jsonify({"status": "error", "message": "Unauthorized Access"})
+        
+        # Get playlist
+        db_cursor.execute(
+            f"SELECT * FROM playlistData WHERE playlistId = ?", (playlistId,)
+        )
+
+        playlistData = db_cursor.fetchone()
+        if playlistData is None:
+            return jsonify({"status": "error", "message": "Playlist not found"})
+        
+        playlistData = dict(zip([key[0] for key in db_cursor.description], playlistData))
+
+        # Get all songs in the playlist
+        db_cursor.execute(
+            f"SELECT * FROM songData JOIN genreData ON songData.songGenreId = genreData.genreId JOIN languageData ON songData.songLanguageId = languageData.languageId WHERE songId IN (SELECT songId FROM playlistSongs WHERE playlistId = ?)",
+            (playlistId,),
+        )
+
+        songList = db_cursor.fetchall()
+        if songList is None:
+            songList = []
+        else:
+            songList = [dict(zip([key[0] for key in db_cursor.description], song)) for song in songList]
+
+        db_connection.close()
+
+        return jsonify(
+            {
+                "status": "success",
+                "message": "Playlist Fetched",
+                "playlistData": playlistData,
+                "songList": songList,
+            }
+        )
+
+    except Exception as e:
+        print(e)
+        return jsonify({"status": "error", "message": "Something Went Wrong"})
+    
+@app.route("/api/playlist/<playlistId>/song/<songId>/link", methods=["POST"])
+def apiLinkSongToPlaylist(playlistId, songId):
+    try:
+        header = request.headers.get("Authorization")
+        if header is None:
+            return jsonify({"status": "error", "message": "Session Expired"})
+        
+        secretToken = header.split(" ")[1]
+
+        if len(str(secretToken)) == 0 or secretToken is None:
+            return jsonify({"status": "error", "message": "Session Expired"})
+
+        decryptedToken = validateToken(
+            secretToken.split(",")[0],
+            secretToken.split(",")[1],
+            secretToken.split(",")[2],
+        )
+
+        userId = decryptedToken["userId"]
+
+        if decryptedToken == -2:
+            return jsonify({"status": "error", "message": "Session Expired"})
+        elif decryptedToken == -1:
+            return jsonify({"status": "error", "message": "Session Expired"})
+
+        db_connection = sqlite3.connect("./schema/app_data.db")
+        db_cursor = db_connection.cursor()
+
+        # Check if user Exists and check role
+        db_cursor.execute(
+            f"SELECT userRoleId FROM userData WHERE userId = ?", (userId,)
+        )
+
+        userData = db_cursor.fetchone()
+
+        if userData is None:
+            return jsonify({"status": "error", "message": "Invalid Credentials"})
+        
+        userRoleId = userData[0]
+
+        if userRoleId != 1 and userRoleId != 0 and userRoleId != 2:
+            return jsonify({"status": "error", "message": "Unauthorized Access"})
+        
+        # Get playlist
+        db_cursor.execute(
+            f"SELECT * FROM playlistData WHERE playlistId = ?", (playlistId,)
+        )
+
+        playlistData = db_cursor.fetchone()
+        if playlistData is None:
+            return jsonify({"status": "error", "message": "Playlist not found"})
+        
+        # Get song
+        db_cursor.execute(
+            f"SELECT * FROM songData WHERE songId = ?", (songId,)
+        )
+
+        songData = db_cursor.fetchone()
+        if songData is None:
+            return jsonify({"status": "error", "message": "Song not found"})
+        
+        # Check if song is already linked to playlist
+        db_cursor.execute(
+            f"SELECT * FROM playlistSongs WHERE playlistId = ? AND songId = ?",
+            (playlistId, songId),
+        )
+
+        playlistSongData = db_cursor.fetchone()
+
+        if playlistSongData is not None:
+            return jsonify({"status": "error", "message": "Song already linked to playlist"})
+        
+        db_cursor.execute(
+            f"INSERT INTO playlistSongs (playlistId, songId) VALUES (?, ?)",
+            (playlistId, songId),
+        )
+
+        affectedRows = db_cursor.rowcount
+        if affectedRows == 0:
+            return jsonify({"status": "error", "message": "Something went wrong"})
+        
+        db_connection.commit()
+        db_connection.close()
+
+        return jsonify(
+            {
+                "status": "success",
+                "message": "Song linked to playlist",
+            }
+        )
+    
+    except Exception as e:
+        print(e)
+        return jsonify({"status": "error", "message": "Something Went Wrong"})
+    
+@app.route("/api/playlist/<playlistId>/song/<songId>/unlink", methods=["POST"])
+def apiUnlinkSongFromPlaylist(playlistId, songId):
+    try:
+        header = request.headers.get("Authorization")
+        if header is None:
+            return jsonify({"status": "error", "message": "Session Expired"})
+        
+        secretToken = header.split(" ")[1]
+
+        if len(str(secretToken)) == 0 or secretToken is None:
+            return jsonify({"status": "error", "message": "Session Expired"})
+
+        decryptedToken = validateToken(
+            secretToken.split(",")[0],
+            secretToken.split(",")[1],
+            secretToken.split(",")[2],
+        )
+
+        userId = decryptedToken["userId"]
+
+        if decryptedToken == -2:
+            return jsonify({"status": "error", "message": "Session Expired"})
+        elif decryptedToken == -1:
+            return jsonify({"status": "error", "message": "Session Expired"})
+
+        db_connection = sqlite3.connect("./schema/app_data.db")
+        db_cursor = db_connection.cursor()
+
+        # Check if user Exists and check role
+        db_cursor.execute(
+            f"SELECT userRoleId FROM userData WHERE userId = ?", (userId,)
+        )
+
+        userData = db_cursor.fetchone()
+
+        if userData is None:
+            return jsonify({"status": "error", "message": "Invalid Credentials"})
+        
+        userRoleId = userData[0]
+
+        if userRoleId != 1 and userRoleId != 0 and userRoleId != 2:
+            return jsonify({"status": "error", "message": "Unauthorized Access"})
+        
+        # Get playlist
+        db_cursor.execute(
+            f"SELECT * FROM playlistData WHERE playlistId = ?", (playlistId,)
+        )
+
+        playlistData = db_cursor.fetchone()
+        if playlistData is None:
+            return jsonify({"status": "error", "message": "Playlist not found"})
+        
+        # Get song
+        db_cursor.execute(
+            f"SELECT * FROM songData WHERE songId = ?", (songId,)
+        )
+
+        songData = db_cursor.fetchone()
+        if songData is None:
+            return jsonify({"status": "error", "message": "Song not found"})
+        
+        # Check if song is already linked to playlist
+        db_cursor.execute(
+            f"SELECT * FROM playlistSongs WHERE playlistId = ? AND songId = ?",
+            (playlistId, songId),
+        )
+
+        playlistSongData = db_cursor.fetchone()
+
+        if playlistSongData is None:
+            return jsonify({"status": "error", "message": "Song not linked to playlist"})
+        
+        db_cursor.execute(
+            f"DELETE FROM playlistSongs WHERE playlistId = ? AND songId = ?",
+            (playlistId, songId),
+        )
+
+        affectedRows = db_cursor.rowcount
+        if affectedRows == 0:
+            return jsonify({"status": "error", "message": "Something went wrong"})
+        
+        db_connection.commit()
+        db_connection.close()
+
+        return jsonify(
+            {
+                "status": "success",
+                "message": "Song unlinked from playlist",
+            }
+        )
+    
     except Exception as e:
         print(e)
         return jsonify({"status": "error", "message": "Something Went Wrong"})
