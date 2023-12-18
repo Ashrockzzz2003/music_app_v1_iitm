@@ -21,6 +21,7 @@
         let lastPausedId = null;
 
         function lyricsModalPopup(songName, songLyrics) {
+            console.log(songName, songLyrics);
             const mainScreen = document.querySelector('.mainScreen');
             mainScreen.style.filter = 'blur(10px)';
             const modal = document.querySelector('.modal');
@@ -142,7 +143,7 @@
         <header>
             <nav>
                 <ul class="nav-bar">
-                    <a class="logo" href="/creator/dashboard">
+                    <a class="logo" href="/">
                         <i class="material-icons">music_note</i>
                         <span class="logo-text">Music App</span>
                     </a>
@@ -218,9 +219,6 @@
                         </div>
                         <hr />
                         <div class="songCard__buttons">
-                            <a href="/song/{{song[0]}}/edit">
-                                <i class="material-icons">edit</i>
-                            </a>
                             <div class="iconRow playButton" id="playButton_{{song[0]}}"
                                 onclick="handlePlayPause(`{{song[0]}}`, `{{song[4]}}`)">
                                 <i class="material-icons play">play_arrow</i>
@@ -231,24 +229,14 @@
                                 <i class="material-icons"
                                     onclick="lyricsModalPopup(`{{song[1]}}`, `{{song[3] | safe}}`)">lyrics</i>
                             </a>
-                            {% if song[6] == '1' %}
-                            <a href="/song/{{song[0]}}/deactivate">
-                                <i class="material-icons">flag</i>
-                            </a>
-                            {% else %}
-                            <a href="/song/{{song[0]}}/activate">
-                                <i class="material-icons">verified</i>
-                            </a>
-                            {% endif %}
                         </div>
                         <div class="songCard__buttons">
-                            <a class="iconRow playButton" style="cursor: pointer; background-image: none; color: white;" id="likeButton_{{song[0]}}"
-                                href="/song/{{song[0]}}/like">
+                            <a class="iconRow playButton" style="cursor: pointer; background-image: none; color: white;"
+                                id="likeButton_{{song[0]}}" href="/song/{{song[0]}}/like">
                                 <i class="material-icons">thumb_up</i>
                                 <p class="button-text">{{song[7]}}</p>
                             </a>
-                            <a style="cursor: pointer" id="unLikeButton_{{song[0]}}"
-                                href="/song/{{song[0]}}/unlike">
+                            <a style="cursor: pointer" id="unLikeButton_{{song[0]}}" href="/song/{{song[0]}}/unlike">
                                 <i class="material-icons">thumb_down</i>
                             </a>
                         </div>
@@ -258,29 +246,30 @@
             </div>
             {% endif %}
         </div>
+    </div>
 
-        <div class="modal">
-            <div class="modal-content">
-                <div class="form-container">
-                    <span class="close" onclick="closeModal()">&times;</span>
-                    <h2 id="modalTitle"></h2>
-                </div>
-                <p id="lyricsBody"></p>
+    <div class="modal">
+        <div class="modal-content">
+            <div class="form-container">
+                <span class="close" onclick="closeModal()">&times;</span>
+                <h2 id="modalTitle"></h2>
             </div>
+            <p id="lyricsBody"></p>
         </div>
+    </div>
 
-        {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-        {% for category, message in messages %}
-        <script>
-            alert("{{ message }}");
-        </script>
-        {% endfor %}
-        {% endif %}
-        {% endwith %}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    {% for category, message in messages %}
+    <script>
+        alert("{{ message }}");
+    </script>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
 
-        <!-- JS -->
-        <script type="text/javascript" src="../../static/js/base.js"></script>
+    <!-- JS -->
+    <script type="text/javascript" src="../../static/js/base.js"></script>
 </body>
 
 </html>
