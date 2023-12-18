@@ -1,1 +1,6 @@
 /.venv
+
+# Ignore all pycache directories across the project
+
+/middleware/__pycache__
+/schema/__pycache__
