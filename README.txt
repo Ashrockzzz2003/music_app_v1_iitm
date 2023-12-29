@@ -46,7 +46,7 @@ Type the following URL in your browser: http://127.0.0.1:5000
 Step 4 (Login Credentials)
 Admin
 userEmail: ram@gmail.com
-userPassword: As@131003
+userPassword: ram12345
 
 Creator
 userEmail: ashrockzzz2003@gmail.com
