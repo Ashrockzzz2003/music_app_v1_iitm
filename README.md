@@ -12,6 +12,12 @@
 
 Follow the instructions to run the app, make sure you have python 3.7 or above installed on your system.
 
+## Clone the Repository
+
+```bash
+git clone https://github.com/Ashrockzzz2003/music_app_iitm_v1.git
+```
+
 ## MacOS, Linux Users
 
 ### Step 1
