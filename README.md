@@ -8,6 +8,10 @@
 | Backend | `Python`, `flask` |
 | Database | `SQLite3` |
 
+## Demo Video
+
+[Watch the Demo Video](https://drive.google.com/file/d/1FqHtkpy-4MdMyAfW_4VYtiQyA-NQaWV7/view?usp=sharing)
+
 ## To Run the app
 
 Follow the instructions to run the app, make sure you have python 3.7 or above installed on your system.
